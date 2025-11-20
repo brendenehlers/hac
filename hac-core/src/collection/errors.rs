@@ -1,3 +1,5 @@
+// TODO use this somewhere, seems important
+#[allow(dead_code)]
 pub enum CollectionError {
     Unknown(String),
 }

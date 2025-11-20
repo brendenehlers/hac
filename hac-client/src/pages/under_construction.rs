@@ -29,7 +29,7 @@ impl Renderable for UnderConstruction<'_> {
             .saturating_sub(icon_half_height as u16)
             .saturating_sub(1);
 
-        let icon_size = Rect::new(
+        let _icon_size = Rect::new(
             size.x,
             size.y.add(starting_y),
             size.width,
@@ -39,7 +39,7 @@ impl Renderable for UnderConstruction<'_> {
         let message =
             Line::from("Hold on, we're cooking up something new!").fg(self.colors.normal.red);
 
-        let message_size = Rect::new(
+        let _message_size = Rect::new(
             size.x,
             size.y.add(starting_y).add(icon_height as u16).add(1),
             size.width,
