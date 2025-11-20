@@ -32,7 +32,7 @@ impl<'ae> AuthEditor<'ae> {
         collection_store: Rc<RefCell<CollectionStore>>,
     ) -> Self {
         AuthEditor {
-            auth_kind_prompt: AuthKindPrompt::new(colors, collection_store.clone()),
+            auth_kind_prompt: AuthKindPrompt::new(colors),
             colors,
             collection_store,
         }
