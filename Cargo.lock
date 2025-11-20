@@ -262,10 +262,26 @@ checksum = "f476fe445d41c9e991fd07515a6f463074b782242ccf4a5b7b1d1012e70824df"
 dependencies = [
  "bitflags 2.5.0",
  "crossterm_winapi",
- "futures-core",
  "libc",
  "mio 0.8.11",
  "parking_lot",
+ "signal-hook",
+ "signal-hook-mio",
+ "winapi",
+]
+
+[[package]]
+name = "crossterm"
+version = "0.28.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "829d955a0bb380ef178a640b91779e3987da38c9aea133b20614cfed8cdea9c6"
+dependencies = [
+ "bitflags 2.5.0",
+ "crossterm_winapi",
+ "futures-core",
+ "mio 1.0.1",
+ "parking_lot",
+ "rustix",
  "signal-hook",
  "signal-hook-mio",
  "winapi",
@@ -593,7 +609,7 @@ name = "hac-client"
 version = "0.2.0"
 dependencies = [
  "anyhow",
- "crossterm",
+ "crossterm 0.28.1",
  "divan",
  "futures",
  "hac-cli",
@@ -621,7 +637,7 @@ name = "hac-colors"
 version = "0.2.0"
 dependencies = [
  "anyhow",
- "crossterm",
+ "crossterm 0.28.1",
  "ratatui",
  "serde",
  "toml",
@@ -963,6 +979,7 @@ checksum = "4569e456d394deccd22ce1c1913e6ea0e54519f577285001215d33557431afe4"
 dependencies = [
  "hermit-abi",
  "libc",
+ "log",
  "wasi",
  "windows-sys 0.52.0",
 ]
@@ -1221,7 +1238,7 @@ dependencies = [
  "bitflags 2.5.0",
  "cassowary",
  "compact_str",
- "crossterm",
+ "crossterm 0.27.0",
  "itertools 0.12.1",
  "lru",
  "paste",
@@ -1568,12 +1585,13 @@ dependencies = [
 
 [[package]]
 name = "signal-hook-mio"
-version = "0.2.3"
+version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "29ad2e15f37ec9a6cc544097b78a1ec90001e9f71b81338ca39f430adaca99af"
+checksum = "b75a19a7a740b25bc7944bdee6172368f988763b744e3d4dfe753f6b4ece40cc"
 dependencies = [
  "libc",
  "mio 0.8.11",
+ "mio 1.0.1",
  "signal-hook",
 ]
 
