@@ -14,4 +14,4 @@ categories = ["command-line-utilities"]
 workspace = "../"
 
 [dependencies]
-clap = { version = "4.5.15", features = ["derive"] }
+clap = { version = "4.5.53", features = ["derive"] }
