@@ -1,17 +1,12 @@
 use crate::ascii::LOGO_ASCII;
 use crate::components::component_styles::ComponentBorder;
 use crate::components::list_item::{list_item, ListItemKind};
-use crate::pages::collection_viewer::collection_store::CollectionStore;
 use crate::pages::{overlay::make_overlay, Eventful, Renderable};
-
-use std::cell::RefCell;
-use std::ops::{Add, Div, Sub};
-use std::rc::Rc;
 
 use crossterm::event::{KeyCode, KeyEvent};
 use hac_core::collection::types::AuthMethod;
 use rand::Rng;
-use ratatui::layout::{Constraint, Direction, Flex, Layout, Rect};
+use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::style::Stylize;
 use ratatui::text::{Line, Span};
 use ratatui::widgets::Paragraph;
@@ -25,21 +20,16 @@ pub enum AuthKindPromptEvent {
 #[derive(Debug)]
 pub struct AuthKindPrompt<'akp> {
     colors: &'akp hac_colors::Colors,
-    collection_store: Rc<RefCell<CollectionStore>>,
     selected_idx: usize,
     logo_idx: usize,
 }
 
 impl<'akp> AuthKindPrompt<'akp> {
-    pub fn new(
-        colors: &'akp hac_colors::Colors,
-        collection_store: Rc<RefCell<CollectionStore>>,
-    ) -> AuthKindPrompt {
+    pub fn new(colors: &'akp hac_colors::Colors) -> AuthKindPrompt<'akp> {
         let logo_idx = rand::thread_rng().gen_range(0..LOGO_ASCII.len());
 
         AuthKindPrompt {
             colors,
-            collection_store,
             selected_idx: 0,
             logo_idx,
         }
@@ -63,7 +53,7 @@ impl Renderable for AuthKindPrompt<'_> {
             .direction(Direction::Horizontal)
             .areas(size);
 
-        let [_, logo_size, _, header_size, _, options_size, hint_size] = Layout::default()
+        let [_, logo_size, _, header_size, _, options_size, _hint_size] = Layout::default()
             .constraints([
                 Constraint::Length(2),
                 Constraint::Length(logo_size),
