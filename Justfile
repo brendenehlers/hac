@@ -22,8 +22,14 @@ build-time:
 fmt:
     cargo +nightly fmt -- --check
 
+fmt-fix:
+	cargo +nightly fmt
+
 lint:
     cargo clippy --workspace --all-features --all-targets -- -D warnings
+
+lint-fix:
+	cargo clippy --fix
 
 # =================================== #
 #      RELEASE STUFF. DO NOT USE      #
