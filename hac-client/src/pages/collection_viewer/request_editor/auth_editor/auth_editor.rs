@@ -32,7 +32,7 @@ impl<'ae> AuthEditor<'ae> {
         collection_store: Rc<RefCell<CollectionStore>>,
     ) -> Self {
         AuthEditor {
-            auth_kind_prompt: AuthKindPrompt::new(colors, collection_store.clone()),
+            auth_kind_prompt: AuthKindPrompt::new(colors),
             colors,
             collection_store,
         }
@@ -64,11 +64,8 @@ impl<'ae> AuthEditor<'ae> {
         frame: &mut Frame,
         overlay: CollectionViewerOverlay,
     ) -> anyhow::Result<()> {
-        match overlay {
-            CollectionViewerOverlay::ChangeAuthMethod => {
-                self.auth_kind_prompt.draw(frame, frame.size())?;
-            }
-            _ => {}
+        if overlay == CollectionViewerOverlay::ChangeAuthMethod {
+            self.auth_kind_prompt.draw(frame, frame.size())?;
         }
         Ok(())
     }
@@ -138,9 +135,8 @@ impl Eventful for AuthEditor<'_> {
             return Ok(None);
         }
 
-        match key_event.code {
-            KeyCode::Char('n') => return Ok(Some(AuthEditorEvent::ChangeAuthMethod)),
-            _ => {}
+        if let KeyCode::Char('n') = key_event.code {
+            return Ok(Some(AuthEditorEvent::ChangeAuthMethod));
         }
 
         Ok(None)
