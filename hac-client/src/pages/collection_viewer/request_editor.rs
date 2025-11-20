@@ -108,14 +108,17 @@ impl<'re> RequestEditor<'re> {
         collection_store: Rc<RefCell<CollectionStore>>,
         size: Rect,
     ) -> Self {
-        let curr_tab = collection_store
+        let curr_tab = if collection_store
             .borrow()
             .get_selected_request()
             .as_ref()
             .map(request_has_no_body)
             .unwrap_or(false)
-            .then_some(ReqEditorTabs::Headers)
-            .unwrap_or_default();
+        {
+            ReqEditorTabs::Headers
+        } else {
+            Default::default()
+        };
 
         let layout = build_layout(size);
 

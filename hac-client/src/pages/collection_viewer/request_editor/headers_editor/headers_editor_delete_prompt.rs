@@ -70,7 +70,7 @@ impl Renderable for HeadersEditorDeletePrompt<'_> {
         let components = logo
             .iter()
             .map(|line| Line::from(line.fg(self.colors.normal.red)))
-            .chain(std::iter::repeat(Line::from("")).take(2))
+            .chain(std::iter::repeat_n(Line::from(""), 2))
             .chain(lines)
             .collect::<Vec<_>>();
 
