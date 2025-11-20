@@ -5,7 +5,32 @@
 
 version: 2
 updates:
-  - package-ecosystem: "cargo" # See documentation for possible values
-    directories: "/**/Cargo.toml" # Location of package manifests
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "cargo"
+    directory: "/hac-cli"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "cargo"
+    directory: "/hac-client"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "cargo"
+    directory: "/hac-colors"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "cargo"
+    directory: "/hac-config"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "cargo"
+    directory: "/hac-core"
     schedule:
       interval: "weekly"
