@@ -5,13 +5,12 @@ use crate::pages::collection_viewer::collection_store::CollectionStore;
 use crate::pages::{overlay::make_overlay, Eventful, Renderable};
 
 use std::cell::RefCell;
-use std::ops::{Add, Div, Sub};
 use std::rc::Rc;
 
 use crossterm::event::{KeyCode, KeyEvent};
 use hac_core::collection::types::AuthMethod;
 use rand::Rng;
-use ratatui::layout::{Constraint, Direction, Flex, Layout, Rect};
+use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::style::Stylize;
 use ratatui::text::{Line, Span};
 use ratatui::widgets::Paragraph;
@@ -34,7 +33,7 @@ impl<'akp> AuthKindPrompt<'akp> {
     pub fn new(
         colors: &'akp hac_colors::Colors,
         collection_store: Rc<RefCell<CollectionStore>>,
-    ) -> AuthKindPrompt {
+    ) -> AuthKindPrompt<'akp> {
         let logo_idx = rand::thread_rng().gen_range(0..LOGO_ASCII.len());
 
         AuthKindPrompt {
