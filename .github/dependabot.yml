@@ -11,26 +11,26 @@ updates:
       interval: "weekly"
 
   - package-ecosystem: "cargo"
-    directory: "/hac-cli"
+    directory: "/hac-cli/"
     schedule:
       interval: "weekly"
 
   - package-ecosystem: "cargo"
-    directory: "/hac-client"
+    directory: "/hac-client/"
     schedule:
       interval: "weekly"
 
   - package-ecosystem: "cargo"
-    directory: "/hac-colors"
+    directory: "/hac-colors/"
     schedule:
       interval: "weekly"
 
   - package-ecosystem: "cargo"
-    directory: "/hac-config"
+    directory: "/hac-config/"
     schedule:
       interval: "weekly"
 
   - package-ecosystem: "cargo"
-    directory: "/hac-core"
+    directory: "/hac-core/"
     schedule:
       interval: "weekly"
