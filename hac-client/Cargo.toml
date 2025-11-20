@@ -30,7 +30,7 @@ tree-sitter.workspace = true
 divan.workspace = true
 lazy_static.workspace = true
 
-futures = "0.3.30"
+futures = "0.3.31"
 tui-big-text = { version = "0.4.4" }
 tracing-subscriber = { version = "0.3.20" }
 tracing-appender = "0.2.3"
