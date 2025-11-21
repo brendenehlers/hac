@@ -29,7 +29,7 @@ pub struct HeadersEditorDeletePrompt<'hedp> {
 
 impl<'hedp> HeadersEditorDeletePrompt<'hedp> {
     pub fn new(colors: &'hedp hac_colors::Colors) -> Self {
-        let logo_idx = rand::thread_rng().gen_range(0..LOGO_ASCII.len());
+        let logo_idx = rand::rng().random_range(0..LOGO_ASCII.len());
         HeadersEditorDeletePrompt { colors, logo_idx }
     }
 }

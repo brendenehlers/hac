@@ -173,24 +173,23 @@ impl<'a> ResponseViewer<'a> {
                 .unwrap_or(String::default());
 
             self.error_lines = Some(
-                get_error_ascii_art(
-                    self.preview_layout.content_pane.width,
-                    &mut rand::thread_rng(),
-                )
-                .iter()
-                .map(|line| Line::from(line.to_string()).centered())
-                .chain(vec!["".into()])
-                .chain(
-                    cause
-                        .chars()
-                        .collect::<Vec<_>>()
-                        .chunks(self.layout.content_pane.width.sub(3).into())
-                        .map(|chunk| {
-                            Line::from(chunk.iter().collect::<String>().fg(self.colors.normal.red))
-                        })
-                        .collect::<Vec<_>>(),
-                )
-                .collect::<Vec<Line>>(),
+                get_error_ascii_art(self.preview_layout.content_pane.width, &mut rand::rng())
+                    .iter()
+                    .map(|line| Line::from(line.to_string()).centered())
+                    .chain(vec!["".into()])
+                    .chain(
+                        cause
+                            .chars()
+                            .collect::<Vec<_>>()
+                            .chunks(self.layout.content_pane.width.sub(3).into())
+                            .map(|chunk| {
+                                Line::from(
+                                    chunk.iter().collect::<String>().fg(self.colors.normal.red),
+                                )
+                            })
+                            .collect::<Vec<_>>(),
+                    )
+                    .collect::<Vec<Line>>(),
             )
         };
 
@@ -727,7 +726,7 @@ where
 {
     match width.gt(&60) {
         false => {
-            let index = rng.gen_range(0..SMALL_ERROR_ARTS.len());
+            let index = rng.random_range(0..SMALL_ERROR_ARTS.len());
             SMALL_ERROR_ARTS[index]
         }
         true => {
@@ -735,7 +734,7 @@ where
                 .iter()
                 .chain(SMALL_ERROR_ARTS)
                 .collect::<Vec<_>>();
-            let index = rng.gen_range(0..full_range_arts.len());
+            let index = rng.random_range(0..full_range_arts.len());
             full_range_arts[index]
         }
     }
@@ -763,8 +762,8 @@ mod tests {
 
     use super::*;
     #[test]
-    fn test_ascii_with_size() {
-        let seed = [0u8; 32];
+    fn test_ascii_with_size_too_small() {
+        let seed = [1u8; 32];
         let mut rng = StdRng::from_seed(seed);
 
         let too_small = 59;
@@ -778,13 +777,24 @@ mod tests {
         ];
 
         assert_eq!(art, expected);
+    }
+
+    #[test]
+    fn test_ascii_with_size_big_enough() {
+        let seed = [0u8; 32];
+        let mut rng = StdRng::from_seed(seed);
 
         let expected = [
-            r#"     dBBBP dBBBBBb  dBBBBBb    dBBBBP dBBBBBb"#,
-            r#"               dBP      dBP   dBP.BP      dBP"#,
-            r#"   dBBP    dBBBBK   dBBBBK   dBP.BP   dBBBBK "#,
-            r#"  dBP     dBP  BB  dBP  BB  dBP.BP   dBP  BB "#,
-            r#" dBBBBP  dBP  dB' dBP  dB' dBBBBP   dBP  dB' "#,
+            r#"              .u    .      .u    .          u.      .u    .   "#,
+            r#"     .u     .d88B :@8c   .d88B :@8c   ...ue888b   .d88B :@8c  "#,
+            r#"  ud8888.  ="8888f8888r ="8888f8888r  888R Y888r ="8888f8888r "#,
+            r#":888'8888.   4888>'88"    4888>'88"   888R I888>   4888>'88"  "#,
+            r#"d888 '88%"   4888> '      4888> '     888R I888>   4888> '    "#,
+            r#"8888.+"      4888>        4888>       888R I888>   4888>      "#,
+            r#"8888L       .d888L .+    .d888L .+   u8888cJ888   .d888L .+   "#,
+            r#"'8888c. .+  ^"8888*"     ^"8888*"     "*888*P"    ^"8888*"    "#,
+            r#" "88888%       "Y"          "Y"         'Y"          "Y"      "#,
+            r#"   "YP'                                                       "#,
         ];
 
         let big_enough = 100;

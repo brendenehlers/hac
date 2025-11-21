@@ -19,7 +19,7 @@ impl<'df> DirectoryForm<'df, DirectoryFormEdit> {
         collection_store: Rc<RefCell<CollectionStore>>,
         directory: Option<(String, String)>,
     ) -> DirectoryForm<'df, DirectoryFormEdit> {
-        let logo_idx = rand::thread_rng().gen_range(0..LOGO_ASCII.len());
+        let logo_idx = rand::rng().random_range(0..LOGO_ASCII.len());
         let dir_name = directory
             .as_ref()
             .map(|dir| dir.1.clone())

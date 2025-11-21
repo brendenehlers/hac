@@ -43,7 +43,7 @@ impl<'srp> SelectRequestParent<'srp> {
             colors,
             collection_store,
             selected_dir: 0,
-            logo_idx: rand::thread_rng().gen_range(0..LOGO_ASCII.len()),
+            logo_idx: rand::rng().random_range(0..LOGO_ASCII.len()),
             scroll: 0,
         }
     }

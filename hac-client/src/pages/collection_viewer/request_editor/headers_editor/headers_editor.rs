@@ -60,7 +60,7 @@ impl<'he> HeadersEditor<'he> {
     ) -> Self {
         let row_height = 2;
         let layout = build_layout(size, row_height);
-        let logo_idx = rand::thread_rng().gen_range(0..LOGO_ASCII.len());
+        let logo_idx = rand::rng().random_range(0..LOGO_ASCII.len());
 
         HeadersEditor {
             delete_prompt: HeadersEditorDeletePrompt::new(colors),
