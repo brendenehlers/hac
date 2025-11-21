@@ -763,8 +763,8 @@ mod tests {
 
     use super::*;
     #[test]
-    fn test_ascii_with_size() {
-        let seed = [0u8; 32];
+    fn test_ascii_with_size_too_small() {
+        let seed = [1u8; 32];
         let mut rng = StdRng::from_seed(seed);
 
         let too_small = 59;
@@ -778,13 +778,24 @@ mod tests {
         ];
 
         assert_eq!(art, expected);
+    }
+
+    #[test]
+    fn test_ascii_with_size_big_enough() {
+        let seed = [0u8; 32];
+        let mut rng = StdRng::from_seed(seed);
 
         let expected = [
-            r#"     dBBBP dBBBBBb  dBBBBBb    dBBBBP dBBBBBb"#,
-            r#"               dBP      dBP   dBP.BP      dBP"#,
-            r#"   dBBP    dBBBBK   dBBBBK   dBP.BP   dBBBBK "#,
-            r#"  dBP     dBP  BB  dBP  BB  dBP.BP   dBP  BB "#,
-            r#" dBBBBP  dBP  dB' dBP  dB' dBBBBP   dBP  dB' "#,
+            r#"              .u    .      .u    .          u.      .u    .   "#,
+            r#"     .u     .d88B :@8c   .d88B :@8c   ...ue888b   .d88B :@8c  "#,
+            r#"  ud8888.  ="8888f8888r ="8888f8888r  888R Y888r ="8888f8888r "#,
+            r#":888'8888.   4888>'88"    4888>'88"   888R I888>   4888>'88"  "#,
+            r#"d888 '88%"   4888> '      4888> '     888R I888>   4888> '    "#,
+            r#"8888.+"      4888>        4888>       888R I888>   4888>      "#,
+            r#"8888L       .d888L .+    .d888L .+   u8888cJ888   .d888L .+   "#,
+            r#"'8888c. .+  ^"8888*"     ^"8888*"     "*888*P"    ^"8888*"    "#,
+            r#" "88888%       "Y"          "Y"         'Y"          "Y"      "#,
+            r#"   "YP'                                                       "#,
         ];
 
         let big_enough = 100;
