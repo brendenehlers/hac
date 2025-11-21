@@ -173,24 +173,23 @@ impl<'a> ResponseViewer<'a> {
                 .unwrap_or(String::default());
 
             self.error_lines = Some(
-                get_error_ascii_art(
-                    self.preview_layout.content_pane.width,
-                    &mut rand::rng(),
-                )
-                .iter()
-                .map(|line| Line::from(line.to_string()).centered())
-                .chain(vec!["".into()])
-                .chain(
-                    cause
-                        .chars()
-                        .collect::<Vec<_>>()
-                        .chunks(self.layout.content_pane.width.sub(3).into())
-                        .map(|chunk| {
-                            Line::from(chunk.iter().collect::<String>().fg(self.colors.normal.red))
-                        })
-                        .collect::<Vec<_>>(),
-                )
-                .collect::<Vec<Line>>(),
+                get_error_ascii_art(self.preview_layout.content_pane.width, &mut rand::rng())
+                    .iter()
+                    .map(|line| Line::from(line.to_string()).centered())
+                    .chain(vec!["".into()])
+                    .chain(
+                        cause
+                            .chars()
+                            .collect::<Vec<_>>()
+                            .chunks(self.layout.content_pane.width.sub(3).into())
+                            .map(|chunk| {
+                                Line::from(
+                                    chunk.iter().collect::<String>().fg(self.colors.normal.red),
+                                )
+                            })
+                            .collect::<Vec<_>>(),
+                    )
+                    .collect::<Vec<Line>>(),
             )
         };
 
