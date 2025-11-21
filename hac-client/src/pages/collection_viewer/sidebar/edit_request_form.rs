@@ -40,7 +40,7 @@ impl<'rf> RequestForm<'rf, RequestFormEdit> {
         collection_store: Rc<RefCell<CollectionStore>>,
         request: Arc<RwLock<Request>>,
     ) -> Self {
-        let logo_idx = rand::thread_rng().gen_range(0..LOGO_ASCII.len());
+        let logo_idx = rand::rng().random_range(0..LOGO_ASCII.len());
         let request_method = request.read().unwrap().method.clone();
         let request_name = request.read().unwrap().name.clone();
 

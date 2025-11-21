@@ -65,7 +65,7 @@ impl Spinner {
     /// converts the spinner into a ratatui line
     pub fn into_line(self) -> Line<'static> {
         let mut pieces = vec![];
-        let step = rand::thread_rng().gen_range(0..Spinner::SYMBOL_SET[self.symbol_set].len());
+        let step = rand::rng().random_range(0..Spinner::SYMBOL_SET[self.symbol_set].len());
         let symbol = Spinner::SYMBOL_SET[self.symbol_set][step];
         pieces.push(Span::styled(symbol.to_string(), self.spinner_style));
         pieces.push(" ".into());
@@ -90,7 +90,7 @@ impl Widget for Spinner {
             return;
         }
 
-        let step = rand::thread_rng().gen_range(0..Spinner::SYMBOL_SET[self.symbol_set].len());
+        let step = rand::rng().random_range(0..Spinner::SYMBOL_SET[self.symbol_set].len());
         let symbol = Spinner::SYMBOL_SET[self.symbol_set][step];
         let span = Span::styled(symbol.to_string(), self.spinner_style);
 

@@ -18,7 +18,7 @@ impl<'df> DirectoryForm<'df, DirectoryFormCreate> {
         colors: &'df hac_colors::Colors,
         collection_store: Rc<RefCell<CollectionStore>>,
     ) -> DirectoryForm<'df, DirectoryFormCreate> {
-        let logo_idx = rand::thread_rng().gen_range(0..LOGO_ASCII.len());
+        let logo_idx = rand::rng().random_range(0..LOGO_ASCII.len());
 
         DirectoryForm {
             colors,

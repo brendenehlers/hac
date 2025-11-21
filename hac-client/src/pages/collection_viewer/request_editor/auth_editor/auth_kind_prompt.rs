@@ -26,7 +26,7 @@ pub struct AuthKindPrompt<'akp> {
 
 impl<'akp> AuthKindPrompt<'akp> {
     pub fn new(colors: &'akp hac_colors::Colors) -> AuthKindPrompt<'akp> {
-        let logo_idx = rand::thread_rng().gen_range(0..LOGO_ASCII.len());
+        let logo_idx = rand::rng().random_range(0..LOGO_ASCII.len());
 
         AuthKindPrompt {
             colors,

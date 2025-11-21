@@ -55,7 +55,7 @@ impl<'hef> HeadersEditorForm<'hef> {
         colors: &'hef hac_colors::Colors,
         collection_store: Rc<RefCell<CollectionStore>>,
     ) -> HeadersEditorForm<'hef> {
-        let logo_idx = rand::thread_rng().gen_range(0..LOGO_ASCII.len());
+        let logo_idx = rand::rng().random_range(0..LOGO_ASCII.len());
 
         HeadersEditorForm {
             colors,

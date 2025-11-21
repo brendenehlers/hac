@@ -39,7 +39,7 @@ impl<'rf> RequestForm<'rf, RequestFormCreate> {
         colors: &'rf hac_colors::Colors,
         collection_store: Rc<RefCell<CollectionStore>>,
     ) -> Self {
-        let logo_idx = rand::thread_rng().gen_range(0..LOGO_ASCII.len());
+        let logo_idx = rand::rng().random_range(0..LOGO_ASCII.len());
 
         RequestForm {
             colors,

@@ -175,7 +175,7 @@ impl<'a> ResponseViewer<'a> {
             self.error_lines = Some(
                 get_error_ascii_art(
                     self.preview_layout.content_pane.width,
-                    &mut rand::thread_rng(),
+                    &mut rand::rng(),
                 )
                 .iter()
                 .map(|line| Line::from(line.to_string()).centered())
@@ -727,7 +727,7 @@ where
 {
     match width.gt(&60) {
         false => {
-            let index = rng.gen_range(0..SMALL_ERROR_ARTS.len());
+            let index = rng.random_range(0..SMALL_ERROR_ARTS.len());
             SMALL_ERROR_ARTS[index]
         }
         true => {
@@ -735,7 +735,7 @@ where
                 .iter()
                 .chain(SMALL_ERROR_ARTS)
                 .collect::<Vec<_>>();
-            let index = rng.gen_range(0..full_range_arts.len());
+            let index = rng.random_range(0..full_range_arts.len());
             full_range_arts[index]
         }
     }
