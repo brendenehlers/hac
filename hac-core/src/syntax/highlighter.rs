@@ -33,11 +33,11 @@ impl Default for Highlighter {
     fn default() -> Self {
         let mut parser = Parser::new();
         let json_language = include_str!("queries/json/highlights.scm");
-        let query = Query::new(&tree_sitter_json::language(), json_language)
+        let query = Query::new(&tree_sitter_json::LANGUAGE.into(), json_language)
             .expect("failed to load json query");
 
         parser
-            .set_language(&tree_sitter_json::language())
+            .set_language(&tree_sitter_json::LANGUAGE.into())
             .expect("error loading json grammar");
 
         Highlighter { parser, query }
