@@ -1,6 +1,7 @@
 use std::collections::{HashMap, VecDeque};
 use std::fmt::Debug;
 use std::sync::RwLock;
+use tree_sitter::StreamingIterator;
 
 use lazy_static::lazy_static;
 use ratatui::style::Style;
@@ -58,9 +59,9 @@ impl Highlighter {
 
         if let Some(tree) = tree {
             let mut cursor = QueryCursor::new();
-            let matches = cursor.matches(&self.query, tree.root_node(), buffer.as_bytes());
+            let mut matches = cursor.matches(&self.query, tree.root_node(), buffer.as_bytes());
 
-            for m in matches {
+            while let Some(m) = matches.next() {
                 for cap in m.captures {
                     let node = cap.node;
                     let start = node.start_byte();
