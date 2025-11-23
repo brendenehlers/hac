@@ -439,7 +439,6 @@ impl TextObject<Write> {
                 }
             }
         }
-
         if curr_open.gt(&0) {
             return (cursor.col(), cursor.row());
         }
@@ -473,4 +472,53 @@ impl<State> std::fmt::Display for TextObject<State> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(&self.content.to_string())
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    pub fn setup(content: &mut Option<&str>) -> (TextObject<Write>, Cursor) {
+        (TextObject::from(content.get_or_insert("")).with_write(), Cursor::default())
+    }
+
+    #[test]
+    pub fn find_word_end_returns_ending_row_col() {
+        let (object, cur) = setup(&mut Option::Some("hello"));
+
+        let (col, row) = object.find_word_end(&cur);
+
+        assert_eq!(0, row);
+        assert_eq!(4, col);
+    }
+
+    #[test]
+    pub fn find_word_end_breaks() {
+        let (object, cur) = setup(&mut Option::Some("test.phrase"));
+        
+        let (col, row) = object.find_word_end(&cur);
+
+        assert_eq!(0, row);
+        assert_eq!(3, col);
+    }
+
+    #[test]
+    pub fn find_word_end_skips_whitespace() {
+        let (object, cur) = setup(&mut Option::Some(" \t\nhello"));
+
+        let (col, row) = object.find_word_end(&cur);
+
+        assert_eq!(1, row);
+        assert_eq!(4, col);
+    }
+
+    #[test]
+    pub fn find_word_end_treats_punc_like_word() {
+        let (object, cur) = setup(&mut Option::Some("....."));
+        let (col, row) = object.find_word_end(&cur);
+
+        assert_eq!(0, row);
+        assert_eq!(4, col);
+    }
+
 }
