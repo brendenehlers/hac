@@ -1,41 +1,10 @@
-use crate::{syntax::highlighter::Highlighter, text_object::cursor::Cursor};
+use crate::{syntax::highlighter::Highlighter, text_object::{cursor::Cursor, character, line_break::LineBreak}};
 
 use std::collections::HashMap;
 use std::ops::{Add, Sub};
 
 use ropey::Rope;
 use tree_sitter::Tree;
-
-#[derive(Debug, PartialEq, Clone)]
-pub enum LineBreak {
-    Lf,
-    Crlf,
-}
-
-impl From<LineBreak> for usize {
-    fn from(value: LineBreak) -> usize {
-        match value {
-            LineBreak::Lf => 1,
-            LineBreak::Crlf => 2,
-        }
-    }
-}
-
-impl std::fmt::Display for LineBreak {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Lf => f.write_str("\n"),
-            Self::Crlf => f.write_str("\r\n"),
-        }
-    }
-}
-
-#[derive(PartialEq)]
-enum CharClass {
-    Word,
-    Whitespace,
-    Punctuation,
-}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Readonly;
@@ -198,14 +167,6 @@ impl TextObject<Write> {
         (curr_col, curr_row)
     }
 
-    fn classify(&self, c: char) -> CharClass {
-        match c {
-            _ if c.is_alphanumeric() => CharClass::Word,
-            _ if c.is_whitespace() => CharClass::Whitespace,
-            _ => CharClass::Punctuation,
-        }
-    }
-
     pub fn find_char_after_separator(&self, cursor: &Cursor) -> (usize, usize) {
         let start_idx = self.content.line_to_char(cursor.row()).add(cursor.col());
         let mut end_idx = 0;
@@ -272,15 +233,16 @@ impl TextObject<Write> {
     }
 
     pub fn find_word_end(&self, cursor: &Cursor) -> (usize, usize) {
+        // starting at the next character so we don't get stuck on single length string
         let start_idx = self.content.line_to_char(cursor.row()).add(cursor.col()) + 1;
         let mut end_idx = start_idx;
 
         // skip past initial whitespace to first char of a word or punctuation
         if let Some(initial_char) = self.content.get_char(start_idx) {
-            if self.classify(initial_char) == CharClass::Whitespace {
+            if character::kind(initial_char) == character::Kind::Whitespace {
                 for char in self.content.chars_at(start_idx + 1) {
                     end_idx = end_idx.add(1);
-                    if self.classify(char) != CharClass::Whitespace {
+                    if character::kind(char) != character::Kind::Whitespace {
                         break;
                     }
                 }
@@ -290,7 +252,7 @@ impl TextObject<Write> {
         // can assume we're in word now, find the end
         if let Some(initial_char) = self.content.get_char(end_idx) {
             for char in self.content.chars_at(end_idx + 1) {
-                if self.classify(char) != self.classify(initial_char) {
+                if character::kind(char) != character::kind(initial_char) {
                     break;
                 }
                 end_idx = end_idx.add(1);
@@ -428,11 +390,11 @@ impl TextObject<Write> {
 
         if let Some(initial_char) = self.content.get_char(start_idx) {
             match initial_char {
-                c if is_opening_token(c) => {
+                c if character::is_opening_token(c) => {
                     token_to_search = *combinations.get(&c).unwrap();
                     curr_open = curr_open.add(1);
                 }
-                c if is_closing_token(c) => {
+                c if character::is_closing_token(c) => {
                     token_to_search = *combinations.get(&c).unwrap();
                     curr_open = curr_open.add(1);
                     look_forward = false;
@@ -457,7 +419,7 @@ impl TextObject<Write> {
                     .unwrap_or_default();
 
                 if token_to_search.eq(&char::default()) {
-                    if !is_opening_token(char) {
+                    if !character::is_opening_token(char) {
                         walked = walked.add(1);
                         continue;
                     }
@@ -511,12 +473,4 @@ impl<State> std::fmt::Display for TextObject<State> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(&self.content.to_string())
     }
-}
-
-fn is_opening_token(char: char) -> bool {
-    matches!(char, '(' | '{' | '[' | '<')
-}
-
-fn is_closing_token(char: char) -> bool {
-    matches!(char, ')' | '}' | ']' | '>')
 }
