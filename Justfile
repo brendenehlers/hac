@@ -16,7 +16,7 @@ test-release:
     cargo test --workspace --all-features --release
 
 coverage:
-    cargo tarpaulin --verbose --workspace -o Html
+    cargo tarpaulin --workspace -o Html
 
 build-time:
     cargo +nightly clean
