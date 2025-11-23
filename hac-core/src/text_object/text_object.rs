@@ -198,6 +198,14 @@ impl TextObject<Write> {
         (curr_col, curr_row)
     }
 
+    fn classify(&self, c: char) -> CharClass {
+        match c {
+            _ if c.is_alphanumeric() => CharClass::Word,
+            _ if c.is_whitespace() => CharClass::Whitespace,
+            _ => CharClass::Punctuation,
+        }
+    }
+
     pub fn find_char_after_separator(&self, cursor: &Cursor) -> (usize, usize) {
         let start_idx = self.content.line_to_char(cursor.row()).add(cursor.col());
         let mut end_idx = 0;
@@ -263,15 +271,7 @@ impl TextObject<Write> {
         (curr_col, curr_row)
     }
 
-    fn classify(&self, c: char) -> CharClass {
-        match c {
-            _ if c.is_alphanumeric() => CharClass::Word,
-            _ if c.is_whitespace() => CharClass::Whitespace,
-            _ => CharClass::Punctuation,
-        }
-    }
-
-    pub fn find_ending_char(&self, cursor: &Cursor) -> (usize, usize) {
+    pub fn find_word_end(&self, cursor: &Cursor) -> (usize, usize) {
         let start_idx = self.content.line_to_char(cursor.row()).add(cursor.col()) + 1;
         let mut end_idx = start_idx;
 

@@ -396,7 +396,7 @@ impl<'be> BodyEditor<'be> {
     }
 
     fn move_to_word_end(&mut self) {
-        let (col, row) = self.body.find_ending_char(&self.cursor);
+        let (col, row) = self.body.find_word_end(&self.cursor);
         tracing::info!(
             "cursor->row={},col={}",
             self.cursor.row(),
