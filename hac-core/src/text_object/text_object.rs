@@ -30,6 +30,13 @@ impl std::fmt::Display for LineBreak {
     }
 }
 
+#[derive(PartialEq)]
+enum CharClass {
+    Word,
+    Whitespace,
+    Punctuation,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Readonly;
 #[derive(Debug, Clone, PartialEq)]
@@ -248,6 +255,49 @@ impl TextObject<Write> {
                 }
             }
         };
+
+        let curr_row = self.content.char_to_line(end_idx);
+        let curr_row_start = self.content.line_to_char(curr_row);
+        let curr_col = end_idx.sub(curr_row_start);
+
+        (curr_col, curr_row)
+    }
+
+    fn classify(&self, c: char) -> CharClass {
+        match c {
+            _ if c.is_alphanumeric() => CharClass::Word,
+            _ if c.is_whitespace() => CharClass::Whitespace,
+            _ => CharClass::Punctuation,
+        }
+    }
+
+    pub fn find_ending_char(&self, cursor: &Cursor) -> (usize, usize) {
+        let start_idx = self.content.line_to_char(cursor.row()).add(cursor.col()) + 1;
+        let mut end_idx = start_idx;
+
+        // skip past initial whitespace to first char of a word or punctuation
+        if let Some(initial_char) = self.content.get_char(start_idx) {
+            if self.classify(initial_char) == CharClass::Whitespace {
+                for char in self.content.chars_at(start_idx + 1) {
+                    end_idx = end_idx.add(1);
+                    if self.classify(char) != CharClass::Whitespace {
+                        break;
+                    }
+                }
+            }
+        }
+
+        // "hello": "world!"
+
+        // can assume we're in word now, find the end
+        if let Some(initial_char) = self.content.get_char(end_idx) {
+            for char in self.content.chars_at(end_idx + 1) {
+                if self.classify(char) != self.classify(initial_char) {
+                    break;
+                }
+                end_idx = end_idx.add(1);
+            }
+        }
 
         let curr_row = self.content.char_to_line(end_idx);
         let curr_row_start = self.content.line_to_char(curr_row);

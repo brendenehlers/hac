@@ -13,6 +13,7 @@ pub enum Action {
     FindPrevious,
 
     NextWord,
+    End,
     PreviousWord,
     MoveLeft,
     MoveDown,

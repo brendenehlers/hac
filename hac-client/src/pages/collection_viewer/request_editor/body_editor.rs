@@ -189,6 +189,7 @@ impl<'be> BodyEditor<'be> {
             Action::PageDown => self.page_down(),
             Action::PageUp => self.page_up(),
             Action::NextWord => self.move_to_next_word(),
+            Action::End => self.move_to_word_end(),
             Action::PreviousWord => self.move_to_prev_word(),
             Action::InsertLineBelow => self.insert_line_below(),
             Action::InsertLineAbove => self.insert_line_above(),
@@ -387,6 +388,21 @@ impl<'be> BodyEditor<'be> {
 
     fn move_to_prev_word(&mut self) {
         let (col, row) = self.body.find_char_before_separator(&self.cursor);
+        self.cursor.move_to_row(row);
+        self.cursor.move_to_col(col);
+        let current_line_len = self.body.line_len(self.cursor.row());
+        self.cursor.maybe_snap_to_col(current_line_len);
+        self.maybe_scroll_view();
+    }
+
+    fn move_to_word_end(&mut self) {
+        let (col, row) = self.body.find_ending_char(&self.cursor);
+        tracing::info!(
+            "cursor->row={},col={}",
+            self.cursor.row(),
+            self.cursor.col()
+        );
+        tracing::info!("new->row={},col={}", row, col);
         self.cursor.move_to_row(row);
         self.cursor.move_to_col(col);
         let current_line_len = self.body.line_len(self.cursor.row());
