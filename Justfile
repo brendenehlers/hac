@@ -34,6 +34,11 @@ lint:
 lint-fix:
 	cargo clippy --fix
 
+check:
+    just fmt
+    just lint
+    just test
+
 # =================================== #
 #      RELEASE STUFF. DO NOT USE      #
 # =================================== #
