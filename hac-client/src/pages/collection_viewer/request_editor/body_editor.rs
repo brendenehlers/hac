@@ -397,12 +397,6 @@ impl<'be> BodyEditor<'be> {
 
     fn move_to_word_end(&mut self) {
         let (col, row) = self.body.find_word_end(&self.cursor);
-        tracing::info!(
-            "cursor->row={},col={}",
-            self.cursor.row(),
-            self.cursor.col()
-        );
-        tracing::info!("new->row={},col={}", row, col);
         self.cursor.move_to_row(row);
         self.cursor.move_to_col(col);
         let current_line_len = self.body.line_len(self.cursor.row());
