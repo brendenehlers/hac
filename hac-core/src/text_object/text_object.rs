@@ -483,6 +483,13 @@ mod tests {
     }
 
     #[test]
+    pub fn insert_char() {
+        let (mut object, cur) = setup(&mut Option::None);
+        object.insert_char('a', &cur);
+        assert_eq!("a", object.content.to_string())
+    }
+
+    #[test]
     pub fn find_word_end_returns_ending_row_col() {
         let (object, cur) = setup(&mut Option::Some("hello"));
 
