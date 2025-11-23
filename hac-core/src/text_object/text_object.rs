@@ -287,8 +287,6 @@ impl TextObject<Write> {
             }
         }
 
-        // "hello": "world!"
-
         // can assume we're in word now, find the end
         if let Some(initial_char) = self.content.get_char(end_idx) {
             for char in self.content.chars_at(end_idx + 1) {
