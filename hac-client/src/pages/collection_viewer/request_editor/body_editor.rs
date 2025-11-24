@@ -189,7 +189,8 @@ impl<'be> BodyEditor<'be> {
             Action::PageDown => self.page_down(),
             Action::PageUp => self.page_up(),
             Action::NextWord => self.move_to_next_word(),
-            Action::End => self.move_to_word_end(),
+            Action::End => self.move_to_word_end(&true),
+            Action::EndBig => self.move_to_word_end(&false),
             Action::PreviousWord => self.move_to_prev_word(),
             Action::InsertLineBelow => self.insert_line_below(),
             Action::InsertLineAbove => self.insert_line_above(),
@@ -395,8 +396,8 @@ impl<'be> BodyEditor<'be> {
         self.maybe_scroll_view();
     }
 
-    fn move_to_word_end(&mut self) {
-        let (col, row) = self.body.find_word_end(&self.cursor);
+    fn move_to_word_end(&mut self, bigword: &bool) {
+        let (col, row) = self.body.find_word_end(&self.cursor, bigword);
         self.cursor.move_to_row(row);
         self.cursor.move_to_col(col);
         let current_line_len = self.body.line_len(self.cursor.row());

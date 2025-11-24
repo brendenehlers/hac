@@ -127,6 +127,7 @@ impl TextObject<Write> {
         let mut end_idx = 0;
         let mut found = false;
 
+        // TODO refactor to use character module
         for char in self.content.chars_at(col_offset) {
             match (char, found) {
                 (c, false) if c.is_whitespace() => {
@@ -150,6 +151,7 @@ impl TextObject<Write> {
         let mut found = false;
         let mut index = col_offset.saturating_sub(1);
 
+        // TODO refactor to use character module
         for _ in (0..col_offset.saturating_sub(1)).rev() {
             let char = self.content.char(index);
             match (char, found) {
@@ -172,6 +174,7 @@ impl TextObject<Write> {
         let mut end_idx = 0;
         let mut found_newline = false;
 
+        // TODO refactor to use character module
         if let Some(initial_char) = self.content.get_char(start_idx) {
             for char in self.content.chars_at(start_idx) {
                 match (
@@ -204,6 +207,7 @@ impl TextObject<Write> {
         let mut end_idx = start_idx;
         let mut found_newline = false;
 
+        // TODO refactor to use character module
         if let Some(initial_char) = self.content.get_char(start_idx) {
             for _ in (0..start_idx.saturating_sub(1)).rev() {
                 let char = self.content.char(end_idx);
@@ -232,17 +236,17 @@ impl TextObject<Write> {
         (curr_col, curr_row)
     }
 
-    pub fn find_word_end(&self, cursor: &Cursor) -> (usize, usize) {
+    pub fn find_word_end(&self, cursor: &Cursor, bigword: &bool) -> (usize, usize) {
         // starting at the next character so we don't get stuck on single length string
         let start_idx = self.content.line_to_char(cursor.row()).add(cursor.col()) + 1;
         let mut end_idx = start_idx;
 
         // skip past initial whitespace to first char of a word or punctuation
         if let Some(initial_char) = self.content.get_char(start_idx) {
-            if character::kind(initial_char) == character::Kind::Whitespace {
+            if character::kind(initial_char, bigword) == character::Kind::Whitespace {
                 for char in self.content.chars_at(start_idx + 1) {
                     end_idx = end_idx.add(1);
-                    if character::kind(char) != character::Kind::Whitespace {
+                    if character::kind(char, bigword) != character::Kind::Whitespace {
                         break;
                     }
                 }
@@ -252,7 +256,7 @@ impl TextObject<Write> {
         // can assume we're in word now, find the end
         if let Some(initial_char) = self.content.get_char(end_idx) {
             for char in self.content.chars_at(end_idx + 1) {
-                if character::kind(char) != character::kind(initial_char) {
+                if character::kind(char, bigword) != character::kind(initial_char, bigword) {
                     break;
                 }
                 end_idx = end_idx.add(1);
@@ -493,7 +497,7 @@ mod tests {
     pub fn find_word_end_returns_ending_row_col() {
         let (object, cur) = setup(&mut Option::Some("hello"));
 
-        let (col, row) = object.find_word_end(&cur);
+        let (col, row) = object.find_word_end(&cur, &false);
 
         assert_eq!(0, row);
         assert_eq!(4, col);
@@ -503,7 +507,7 @@ mod tests {
     pub fn find_word_end_breaks() {
         let (object, cur) = setup(&mut Option::Some("test.phrase"));
         
-        let (col, row) = object.find_word_end(&cur);
+        let (col, row) = object.find_word_end(&cur, &false);
 
         assert_eq!(0, row);
         assert_eq!(3, col);
@@ -513,7 +517,7 @@ mod tests {
     pub fn find_word_end_skips_whitespace() {
         let (object, cur) = setup(&mut Option::Some(" \t\nhello"));
 
-        let (col, row) = object.find_word_end(&cur);
+        let (col, row) = object.find_word_end(&cur, &false);
 
         assert_eq!(1, row);
         assert_eq!(4, col);
@@ -522,10 +526,20 @@ mod tests {
     #[test]
     pub fn find_word_end_treats_punc_like_word() {
         let (object, cur) = setup(&mut Option::Some("....."));
-        let (col, row) = object.find_word_end(&cur);
+        let (col, row) = object.find_word_end(&cur, &false);
 
         assert_eq!(0, row);
         assert_eq!(4, col);
+    }
+
+    #[test]
+    pub fn find_word_end_bigword_includes_punc() {
+        let (object, cur) = setup(&mut Option::Some("test.phrase"));
+        
+        let (col, row) = object.find_word_end(&cur, &true);
+
+        assert_eq!(0, row);
+        assert_eq!(10, col);
     }
 
 }

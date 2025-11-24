@@ -14,6 +14,7 @@ pub enum Action {
 
     NextWord,
     End,
+    EndBig,
     PreviousWord,
     MoveLeft,
     MoveDown,
