@@ -3,6 +3,7 @@ use crate::{syntax::highlighter::Highlighter, text_object::{cursor::Cursor, char
 use std::collections::HashMap;
 use std::ops::{Add, Sub};
 
+use lazy_static::initialize;
 use ropey::Rope;
 use tree_sitter::Tree;
 
@@ -169,41 +170,40 @@ impl TextObject<Write> {
         (curr_col, curr_row)
     }
 
-    pub fn find_char_after_separator(&self, cursor: &Cursor) -> (usize, usize) {
-        let start_idx = self.content.line_to_char(cursor.row()).add(cursor.col());
-        let mut end_idx = 0;
+    pub fn find_next_word(&self, cursor: &Cursor) -> (usize, usize) {
+        let bigword = &false; // TODO
+
+        let start_idx = self.to_offset_cursor(cursor);
+        let mut end_idx = start_idx;
         let mut found_newline = false;
 
-        // TODO refactor to use character module
-        if let Some(initial_char) = self.content.get_char(start_idx) {
-            for char in self.content.chars_at(start_idx) {
-                match (
-                    initial_char.is_alphanumeric(),
-                    char.is_alphanumeric(),
-                    found_newline,
-                ) {
-                    (_, _, true) if !char.is_whitespace() => break,
-                    (false, true, _) => break,
-                    (true, false, _) => break,
-                    _ if char.is_whitespace() => {
-                        found_newline = true;
-                        end_idx = end_idx.add(1);
-                    }
-                    _ => end_idx = end_idx.add(1),
+        // skip all characters of current type
+        if let Some(initial_char) = self.content.get_char(end_idx) {
+            for char in self.content.chars_at(end_idx) {
+                if char == '\n' {
+                    found_newline = true
                 }
+
+                if character::kind(char, bigword) != character::kind(initial_char, bigword) {
+                    break;
+                }
+                end_idx = end_idx.add(1);
             }
         }
 
-        let curr_idx = start_idx.add(end_idx);
-        let curr_row = self.content.char_to_line(curr_idx);
-        let curr_row_start = self.content.line_to_char(curr_row);
-        let curr_col = curr_idx.sub(curr_row_start);
-
-        (curr_col, curr_row)
+        if !found_newline {
+            // skip trailing whitespace
+            end_idx = self.skip_whitespace_forward(end_idx, bigword)
+        } else {
+            // above algorithm stops at whitespace, need to go to next newline
+            end_idx = end_idx.add(1);
+        }
+        
+        self.from_offset(end_idx)
     }
 
     pub fn find_char_before_separator(&self, cursor: &Cursor) -> (usize, usize) {
-        let start_idx = self.content.line_to_char(cursor.row()).add(cursor.col());
+        let start_idx = self.to_offset_cursor(cursor);
         let mut end_idx = start_idx;
         let mut found_newline = false;
 
@@ -238,9 +238,24 @@ impl TextObject<Write> {
 
     pub fn find_word_end(&self, cursor: &Cursor, bigword: &bool) -> (usize, usize) {
         // starting at the next character so we don't get stuck on single length string
-        let start_idx = self.content.line_to_char(cursor.row()).add(cursor.col()) + 1;
-        let mut end_idx = start_idx;
+        let start_idx = self.to_offset_cursor(cursor) + 1;
+        let mut end_idx = self.skip_whitespace_forward(start_idx, bigword);
 
+        // can assume we're in word now, find the end
+        if let Some(initial_char) = self.content.get_char(end_idx) {
+            for char in self.content.chars_at(end_idx + 1) {
+                if character::kind(char, bigword) != character::kind(initial_char, bigword) {
+                    break;
+                }
+                end_idx = end_idx.add(1);
+            }
+        }
+
+        self.from_offset(end_idx)
+    }
+    
+    fn skip_whitespace_forward(&self, start_idx: usize, bigword: &bool) -> usize {
+        let mut end_idx = start_idx;
         // skip past initial whitespace to first char of a word or punctuation
         if let Some(initial_char) = self.content.get_char(start_idx) {
             if character::kind(initial_char, bigword) == character::Kind::Whitespace {
@@ -253,21 +268,7 @@ impl TextObject<Write> {
             }
         }
 
-        // can assume we're in word now, find the end
-        if let Some(initial_char) = self.content.get_char(end_idx) {
-            for char in self.content.chars_at(end_idx + 1) {
-                if character::kind(char, bigword) != character::kind(initial_char, bigword) {
-                    break;
-                }
-                end_idx = end_idx.add(1);
-            }
-        }
-
-        let curr_row = self.content.char_to_line(end_idx);
-        let curr_row_start = self.content.line_to_char(curr_row);
-        let curr_col = end_idx.sub(curr_row_start);
-
-        (curr_col, curr_row)
+        end_idx
     }
 
     pub fn find_empty_line_above(&self, cursor: &Cursor) -> usize {
@@ -460,6 +461,22 @@ impl TextObject<Write> {
         }
     }
 
+    fn to_offset_cursor(&self, cursor: &Cursor) -> usize {
+        self.to_offset(cursor.col(), cursor.row())
+    }
+
+    fn to_offset(&self, col: usize, row: usize) -> usize {
+        self.content.line_to_char(row).add(col)
+    }
+
+    fn from_offset(&self, idx: usize) -> (usize, usize) {
+        let row = self.content.char_to_line(idx);
+        let row_start = self.content.line_to_char(row);
+        let col = idx.sub(row_start);
+
+        (col, row)
+    }
+
     fn get_scope_aware_indentation(&self, cursor: &Cursor, tree: Option<&Tree>) -> String {
         if let Some(tree) = tree {
             let line_byte_idx = self.content.line_to_byte(cursor.row());
@@ -542,4 +559,43 @@ mod tests {
         assert_eq!(10, col);
     }
 
+    #[test]
+    pub fn find_next_word_works() {
+        let (object, cur) = setup(&mut Option::Some("test phrase"));
+        let (col, row) = object.find_next_word(&cur);
+        assert_eq!(0, row);
+        assert_eq!(5, col);
+    }
+
+    #[test]
+    pub fn find_next_word_includes_punc() {
+        let (object, cur) = setup(&mut Option::Some("test.phrase"));
+        let (col, row) = object.find_next_word(&cur);
+        assert_eq!(0, row);
+        assert_eq!(4, col);
+    }
+
+    #[test]
+    pub fn find_next_word_ignores_whitespace() {
+        let (object, cur) = setup(&mut Option::Some("test \tword"));
+        let (col, row) = object.find_next_word(&cur);
+        assert_eq!(0, row);
+        assert_eq!(6, col);
+    }
+
+    #[test]
+    pub fn find_next_word_treats_punc_like_word() {
+        let (object, cur) = setup(&mut Option::Some("... ..."));
+        let (col, row) = object.find_next_word(&cur);
+        assert_eq!(0, row);
+        assert_eq!(4, col);
+    }
+
+    #[test]
+    pub fn find_next_word_stops_at_newline() {
+        let (object, cur) = setup(&mut Option::Some("hello\n\nworld"));
+        let (col, row) = object.find_next_word(&cur);
+        assert_eq!(1, row);
+        assert_eq!(0, col);
+    }
 }
