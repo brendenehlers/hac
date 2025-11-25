@@ -122,30 +122,6 @@ impl TextObject<Write> {
             .ok();
     }
 
-    pub fn find_char_after_whitespace(&self, cursor: &Cursor) -> (usize, usize) {
-        let line = self.content.line_to_char(cursor.row());
-        let col_offset = line + cursor.col();
-        let mut end_idx = 0;
-        let mut found = false;
-
-        // TODO refactor to use character module
-        for char in self.content.chars_at(col_offset) {
-            match (char, found) {
-                (c, false) if c.is_whitespace() => {
-                    found = true;
-                    end_idx = end_idx.add(1);
-                }
-                (c, true) if !c.is_whitespace() => break,
-                _ => end_idx = end_idx.add(1),
-            }
-        }
-        let curr_idx = col_offset.add(end_idx);
-        let curr_row = self.content.char_to_line(col_offset.add(end_idx));
-        let curr_row_start = self.content.line_to_char(curr_row);
-        let curr_col = curr_idx.sub(curr_row_start);
-        (curr_col, curr_row)
-    }
-
     pub fn find_char_before_whitespace(&self, cursor: &Cursor) -> (usize, usize) {
         let line = self.content.line_to_char(cursor.row());
         let col_offset = line + cursor.col();
@@ -170,9 +146,7 @@ impl TextObject<Write> {
         (curr_col, curr_row)
     }
 
-    pub fn find_next_word(&self, cursor: &Cursor) -> (usize, usize) {
-        let bigword = &false; // TODO
-
+    pub fn find_next_word(&self, cursor: &Cursor, bigword: &bool) -> (usize, usize) {
         let start_idx = self.to_offset_cursor(cursor);
         let mut end_idx = start_idx;
         let mut found_newline = false;
@@ -562,7 +536,7 @@ mod tests {
     #[test]
     pub fn find_next_word_works() {
         let (object, cur) = setup(&mut Option::Some("test phrase"));
-        let (col, row) = object.find_next_word(&cur);
+        let (col, row) = object.find_next_word(&cur, &false);
         assert_eq!(0, row);
         assert_eq!(5, col);
     }
@@ -570,7 +544,7 @@ mod tests {
     #[test]
     pub fn find_next_word_includes_punc() {
         let (object, cur) = setup(&mut Option::Some("test.phrase"));
-        let (col, row) = object.find_next_word(&cur);
+        let (col, row) = object.find_next_word(&cur, &false);
         assert_eq!(0, row);
         assert_eq!(4, col);
     }
@@ -578,7 +552,7 @@ mod tests {
     #[test]
     pub fn find_next_word_ignores_whitespace() {
         let (object, cur) = setup(&mut Option::Some("test \tword"));
-        let (col, row) = object.find_next_word(&cur);
+        let (col, row) = object.find_next_word(&cur, &false);
         assert_eq!(0, row);
         assert_eq!(6, col);
     }
@@ -586,7 +560,7 @@ mod tests {
     #[test]
     pub fn find_next_word_treats_punc_like_word() {
         let (object, cur) = setup(&mut Option::Some("... ..."));
-        let (col, row) = object.find_next_word(&cur);
+        let (col, row) = object.find_next_word(&cur, &false);
         assert_eq!(0, row);
         assert_eq!(4, col);
     }
@@ -594,8 +568,18 @@ mod tests {
     #[test]
     pub fn find_next_word_stops_at_newline() {
         let (object, cur) = setup(&mut Option::Some("hello\n\nworld"));
-        let (col, row) = object.find_next_word(&cur);
+        let (col, row) = object.find_next_word(&cur, &false);
         assert_eq!(1, row);
         assert_eq!(0, col);
+    }
+
+    #[test]
+    pub fn find_next_word_bigword_includes_punc() {
+        let (object, cur) = setup(&mut Option::Some("test.phrase newword"));
+        
+        let (col, row) = object.find_next_word(&cur, &true);
+
+        assert_eq!(0, row);
+        assert_eq!(12, col);
     }
 }
