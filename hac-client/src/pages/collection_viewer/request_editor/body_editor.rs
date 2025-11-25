@@ -188,7 +188,7 @@ impl<'be> BodyEditor<'be> {
             Action::PageDown => self.page_down(),
             Action::PageUp => self.page_up(),
             Action::NextWord => self.move_to_next_word(&false),
-            Action::NextWordBig => self.move_to_next_word(&true), 
+            Action::NextWordBig => self.move_to_next_word(&true),
             Action::End => self.move_to_word_end(&false),
             Action::EndBig => self.move_to_word_end(&true),
             Action::PreviousWord => self.move_to_prev_word(),

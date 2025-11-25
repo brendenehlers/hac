@@ -1,9 +1,11 @@
-use crate::{syntax::highlighter::Highlighter, text_object::{cursor::Cursor, character, line_break::LineBreak}};
+use crate::{
+    syntax::highlighter::Highlighter,
+    text_object::{character, cursor::Cursor, line_break::LineBreak},
+};
 
 use std::collections::HashMap;
 use std::ops::{Add, Sub};
 
-use lazy_static::initialize;
 use ropey::Rope;
 use tree_sitter::Tree;
 
@@ -172,8 +174,8 @@ impl TextObject<Write> {
             // above algorithm stops at whitespace, need to go to next newline
             end_idx = end_idx.add(1);
         }
-        
-        self.from_offset(end_idx)
+
+        self.col_row_from_offset(end_idx)
     }
 
     pub fn find_char_before_separator(&self, cursor: &Cursor) -> (usize, usize) {
@@ -225,9 +227,9 @@ impl TextObject<Write> {
             }
         }
 
-        self.from_offset(end_idx)
+        self.col_row_from_offset(end_idx)
     }
-    
+
     fn skip_whitespace_forward(&self, start_idx: usize, bigword: &bool) -> usize {
         let mut end_idx = start_idx;
         // skip past initial whitespace to first char of a word or punctuation
@@ -443,7 +445,7 @@ impl TextObject<Write> {
         self.content.line_to_char(row).add(col)
     }
 
-    fn from_offset(&self, idx: usize) -> (usize, usize) {
+    fn col_row_from_offset(&self, idx: usize) -> (usize, usize) {
         let row = self.content.char_to_line(idx);
         let row_start = self.content.line_to_char(row);
         let col = idx.sub(row_start);
@@ -474,7 +476,10 @@ mod tests {
     use super::*;
 
     pub fn setup(content: &mut Option<&str>) -> (TextObject<Write>, Cursor) {
-        (TextObject::from(content.get_or_insert("")).with_write(), Cursor::default())
+        (
+            TextObject::from(content.get_or_insert("")).with_write(),
+            Cursor::default(),
+        )
     }
 
     #[test]
@@ -497,7 +502,7 @@ mod tests {
     #[test]
     pub fn find_word_end_breaks() {
         let (object, cur) = setup(&mut Option::Some("test.phrase"));
-        
+
         let (col, row) = object.find_word_end(&cur, &false);
 
         assert_eq!(0, row);
@@ -526,7 +531,7 @@ mod tests {
     #[test]
     pub fn find_word_end_bigword_includes_punc() {
         let (object, cur) = setup(&mut Option::Some("test.phrase"));
-        
+
         let (col, row) = object.find_word_end(&cur, &true);
 
         assert_eq!(0, row);
@@ -576,7 +581,7 @@ mod tests {
     #[test]
     pub fn find_next_word_bigword_includes_punc() {
         let (object, cur) = setup(&mut Option::Some("test.phrase newword"));
-        
+
         let (col, row) = object.find_next_word(&cur, &true);
 
         assert_eq!(0, row);
