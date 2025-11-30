@@ -8,7 +8,7 @@ pub enum Kind {
 
 pub fn kind(c: char, bigword: &bool) -> Kind {
     match c {
-        _ if c.is_alphanumeric() => Kind::Word,
+        _ if c.is_alphanumeric() || c == '_' => Kind::Word,
         _ if c.is_whitespace() => Kind::Whitespace,
         _ if *bigword => Kind::Word,
         _ => Kind::Punctuation,

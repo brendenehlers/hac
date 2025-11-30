@@ -149,30 +149,42 @@ impl TextObject<Write> {
     }
 
     pub fn find_next_word(&self, cursor: &Cursor, bigword: &bool) -> (usize, usize) {
+        let count = 1; // TODO pass as arg
+
         let start_idx = self.to_offset_cursor(cursor);
         let mut end_idx = start_idx;
         let mut found_newline = false;
 
-        // skip all characters of current type
-        if let Some(initial_char) = self.content.get_char(end_idx) {
-            for char in self.content.chars_at(end_idx) {
-                if char == '\n' {
-                    found_newline = true
-                }
-
-                if character::kind(char, bigword) != character::kind(initial_char, bigword) {
-                    break;
-                }
-                end_idx = end_idx.add(1);
+        for _ in 0..count {
+            if end_idx > self.content.len_chars() {
+                break;
             }
-        }
 
-        if !found_newline {
-            // skip trailing whitespace
-            end_idx = self.skip_whitespace_forward(end_idx, bigword)
-        } else {
-            // above algorithm stops at whitespace, need to go to next newline
-            end_idx = end_idx.add(1);
+            // move to end of current word
+            if !self.is_whitespace(self.get_char(end_idx)) {
+                let initial_char_kind = self.get_char_kind(self.get_char(end_idx), bigword);
+
+                while end_idx < self.content.len_chars()
+                    && self.get_char_kind(self.get_char(end_idx), bigword) == initial_char_kind
+                {
+                    end_idx = end_idx.saturating_add(1);
+                }
+            }
+
+            while end_idx < self.content.len_chars() && self.is_whitespace(self.get_char(end_idx)) {
+                match self.get_char(end_idx) {
+                    Some('\n') => {
+                        // return early if a second newline is found
+                        if found_newline {
+                            return self.col_row_from_offset(end_idx);
+                        } else {
+                            found_newline = true;
+                            end_idx = end_idx.saturating_add(1);
+                        }
+                    }
+                    _ => end_idx = end_idx.saturating_add(1),
+                }
+            }
         }
 
         self.col_row_from_offset(end_idx)
@@ -193,6 +205,7 @@ impl TextObject<Write> {
                     Some('\n') => {
                         // stop at the second newline found
                         if found_newline {
+                            // return here since we're two loops deep
                             return self.col_row_from_offset(end_idx);
                         } else {
                             found_newline = true;
@@ -204,7 +217,7 @@ impl TextObject<Write> {
             }
 
             if end_idx == 0 {
-                return self.col_row_from_offset(end_idx);
+                break;
             }
 
             let initial_char_type = self.get_char_kind(self.get_char(end_idx - 1), &bigword);
@@ -605,9 +618,9 @@ mod tests {
             let (object, mut cur) = setup("foo_bar");
             cur.move_right(2);
             let (col, row) = object.find_next_word(&cur, &false);
-            assert_eq!('r', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(Option::None, object.get_char(object.to_offset(col, row)));
             assert_eq!(0, row);
-            assert_eq!(6, col);
+            assert_eq!(7, col);
         }
 
         #[test]
@@ -637,7 +650,7 @@ mod tests {
             let (col, row) = object.find_next_word(&cur, &false);
             assert_eq!(Option::None, object.get_char(object.to_offset(col, row)));
             assert_eq!(0, row);
-            assert_eq!(4, col);
+            assert_eq!(5, col);
         }
 
         #[test]
@@ -664,7 +677,7 @@ mod tests {
             let (object, mut cur) = setup("word\nnext");
             cur.move_right(3);
             let (col, row) = object.find_next_word(&cur, &false);
-            assert_eq!('\n', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!('n', object.get_char(object.to_offset(col, row)).unwrap());
             assert_eq!(1, row);
             assert_eq!(0, col);
         }
@@ -692,11 +705,11 @@ mod tests {
         #[test]
         pub fn find_next_word_at_file_end_no_op() {
             let (object, mut cur) = setup("foo");
-            cur.move_right(2);
+            cur.move_right(3);
             let (col, row) = object.find_next_word(&cur, &false);
             assert_eq!(Option::None, object.get_char(object.to_offset(col, row)));
             assert_eq!(0, row);
-            assert_eq!(2, col);
+            assert_eq!(3, col);
         }
 
         #[test]
