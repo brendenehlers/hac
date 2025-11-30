@@ -503,6 +503,14 @@ mod tests {
         (TextObject::from(content).with_write(), Cursor::default())
     }
 
+    fn create_long_word() -> String {
+        let mut content = String::new();
+        for _ in 0..1000 {
+            content = content.add("a");
+        }
+        content
+    }
+
     #[test]
     pub fn insert_char() {
         let (mut object, cur) = setup("");
@@ -559,54 +567,241 @@ mod tests {
         assert_eq!(10, col);
     }
 
-    #[test]
-    pub fn find_next_word_works() {
-        let (object, cur) = setup("test phrase");
-        let (col, row) = object.find_next_word(&cur, &false);
-        assert_eq!(0, row);
-        assert_eq!(5, col);
-    }
+    mod find_next_word {
+        use super::*;
 
-    #[test]
-    pub fn find_next_word_includes_punc() {
-        let (object, cur) = setup("test.phrase");
-        let (col, row) = object.find_next_word(&cur, &false);
-        assert_eq!(0, row);
-        assert_eq!(4, col);
-    }
+        #[test]
+        pub fn find_next_word_from_middle_of_word_to_next() {
+            let (object, mut cur) = setup("test phrase");
+            cur.move_right(2);
+            let (col, row) = object.find_next_word(&cur, &false);
+            assert_eq!('p', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(5, col);
+        }
 
-    #[test]
-    pub fn find_next_word_ignores_whitespace() {
-        let (object, cur) = setup("test \tword");
-        let (col, row) = object.find_next_word(&cur, &false);
-        assert_eq!(0, row);
-        assert_eq!(6, col);
-    }
+        #[test]
+        pub fn find_next_word_from_end_of_word_to_next() {
+            let (object, mut cur) = setup("test phrase");
+            cur.move_right(3);
+            let (col, row) = object.find_next_word(&cur, &false);
+            assert_eq!('p', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(5, col);
+        }
 
-    #[test]
-    pub fn find_next_word_treats_punc_like_word() {
-        let (object, cur) = setup("... ...");
-        let (col, row) = object.find_next_word(&cur, &false);
-        assert_eq!(0, row);
-        assert_eq!(4, col);
-    }
+        #[test]
+        pub fn find_next_word_between_space_separated_words() {
+            let (object, mut cur) = setup("test phrase");
+            cur.move_right(4);
+            let (col, row) = object.find_next_word(&cur, &false);
+            assert_eq!('p', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(5, col);
+        }
 
-    #[test]
-    pub fn find_next_word_stops_at_newline() {
-        let (object, cur) = setup("hello\n\nworld");
-        let (col, row) = object.find_next_word(&cur, &false);
-        assert_eq!(1, row);
-        assert_eq!(0, col);
-    }
+        #[test]
+        pub fn find_next_word_within_keyword_characters() {
+            let (object, mut cur) = setup("foo_bar");
+            cur.move_right(2);
+            let (col, row) = object.find_next_word(&cur, &false);
+            assert_eq!('r', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(6, col);
+        }
 
-    #[test]
-    pub fn find_next_word_bigword_includes_punc() {
-        let (object, cur) = setup("test.phrase newword");
+        #[test]
+        pub fn find_next_word_keyword_to_punctuation() {
+            let (object, mut cur) = setup("foo,bar");
+            cur.move_right(2);
+            let (col, row) = object.find_next_word(&cur, &false);
+            assert_eq!(',', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(3, col);
+        }
 
-        let (col, row) = object.find_next_word(&cur, &true);
+        #[test]
+        pub fn find_next_word_punctuation_to_keyword() {
+            let (object, mut cur) = setup("foo,bar");
+            cur.move_right(3);
+            let (col, row) = object.find_next_word(&cur, &false);
+            assert_eq!('b', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(4, col);
+        }
 
-        assert_eq!(0, row);
-        assert_eq!(12, col);
+        #[test]
+        pub fn find_next_word_consecutive_punctuation() {
+            let (object, mut cur) = setup("foo!!");
+            cur.move_right(3);
+            let (col, row) = object.find_next_word(&cur, &false);
+            assert_eq!(Option::None, object.get_char(object.to_offset(col, row)));
+            assert_eq!(0, row);
+            assert_eq!(4, col);
+        }
+
+        #[test]
+        pub fn find_next_word_multiple_spaces() {
+            let (object, cur) = setup("one  two");
+            let (col, row) = object.find_next_word(&cur, &false);
+            assert_eq!('t', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(5, col);
+        }
+
+        #[test]
+        pub fn find_next_word_mixed_spaces_and_tabs() {
+            let (object, mut cur) = setup("one \ttwo");
+            cur.move_right(3);
+            let (col, row) = object.find_next_word(&cur, &false);
+            assert_eq!('t', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(5, col);
+        }
+
+        #[test]
+        pub fn find_next_word_to_next_line() {
+            let (object, mut cur) = setup("word\nnext");
+            cur.move_right(3);
+            let (col, row) = object.find_next_word(&cur, &false);
+            assert_eq!('\n', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(1, row);
+            assert_eq!(0, col);
+        }
+
+        #[test]
+        pub fn find_next_word_across_empty_line() {
+            let (object, mut cur) = setup("word\n\nnext");
+            cur.move_right(3);
+            let (col, row) = object.find_next_word(&cur, &false);
+            assert_eq!('\n', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(1, row);
+            assert_eq!(0, col);
+        }
+
+        #[test]
+        pub fn find_next_word_across_multiple_empty_lines() {
+            let (object, mut cur) = setup("word\n\n\nnext");
+            cur.move_right(3);
+            let (col, row) = object.find_next_word(&cur, &false);
+            assert_eq!('\n', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(1, row);
+            assert_eq!(0, col);
+        }
+
+        #[test]
+        pub fn find_next_word_at_file_end_no_op() {
+            let (object, mut cur) = setup("foo");
+            cur.move_right(2);
+            let (col, row) = object.find_next_word(&cur, &false);
+            assert_eq!(Option::None, object.get_char(object.to_offset(col, row)));
+            assert_eq!(0, row);
+            assert_eq!(2, col);
+        }
+
+        #[test]
+        pub fn find_next_word_empty_file() {
+            let (object, cur) = setup("");
+            let (col, row) = object.find_next_word(&cur, &false);
+            assert_eq!(0, row);
+            assert_eq!(0, col);
+        }
+
+        #[test]
+        pub fn find_next_word_whitespace_only_line() {
+            let (object, mut cur) = setup("word  \nnext");
+            cur.move_right(3);
+            let (col, row) = object.find_next_word(&cur, &false);
+            assert_eq!('n', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(1, row);
+            assert_eq!(0, col);
+        }
+
+        #[test]
+        pub fn find_next_word_very_long_word() {
+            let content = create_long_word();
+            let (object, cur) = setup(&content);
+            let (col, row) = object.find_next_word(&cur, &false);
+            assert_eq!(0, row);
+            assert_eq!(content.len(), col);
+        }
+
+        #[test]
+        pub fn find_next_word_punctuation_only_word() {
+            let (object, cur) = setup("word !!!");
+            let (col, row) = object.find_next_word(&cur, &false);
+            assert_eq!('!', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(5, col);
+        }
+
+        #[test]
+        pub fn find_next_word_special_char_to_keyword() {
+            let (object, cur) = setup("$foo");
+            let (col, row) = object.find_next_word(&cur, &false);
+            assert_eq!('f', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(1, col);
+        }
+
+        #[test]
+        pub fn find_next_word_unicode_characters() {
+            let (object, cur) = setup("café résumé");
+            let (col, row) = object.find_next_word(&cur, &false);
+            assert_eq!('r', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(5, col);
+        }
+
+        #[test]
+        pub fn find_next_word_multibyte_sequences() {
+            let (object, cur) = setup("世界 hello");
+            let (col, row) = object.find_next_word(&cur, &false);
+            assert_eq!('h', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(3, col);
+        }
+
+        #[test]
+        pub fn find_next_word_keyword_punctuation_keyword() {
+            let (object, mut cur) = setup("foo()bar");
+            cur.move_right(3);
+            let (col, row) = object.find_next_word(&cur, &false);
+            assert_eq!('b', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(5, col);
+        }
+
+        #[test]
+        pub fn find_next_word_keyword_punctuation_at_line_end() {
+            let (object, mut cur) = setup("word,\nnext");
+            cur.move_right(4);
+            let (col, row) = object.find_next_word(&cur, &false);
+            assert_eq!('n', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(1, row);
+            assert_eq!(0, col);
+        }
+
+        #[test]
+        pub fn find_next_word_from_whitespace_between_words() {
+            let (object, mut cur) = setup("word   next");
+            cur.move_right(5);
+            let (col, row) = object.find_next_word(&cur, &false);
+            assert_eq!('n', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(7, col);
+        }
+
+        #[test]
+        pub fn find_next_word_bigword_includes_punc() {
+            let (object, cur) = setup("test.phrase newword");
+
+            let (col, row) = object.find_next_word(&cur, &true);
+
+            assert_eq!('n', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(12, col);
+        }
     }
 
     mod find_prev_word {
@@ -754,11 +949,7 @@ mod tests {
 
         #[test]
         pub fn very_long_word() {
-            let mut content = String::new();
-            for _ in 0..1000 {
-                content = content.add("a");
-            }
-
+            let content = create_long_word();
             let (object, mut cur) = setup(&content);
             cur.move_right(content.len() - 1);
             let (col, row) = object.find_prev_word(&cur);
