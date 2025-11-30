@@ -3,6 +3,7 @@ pub enum Kind {
     Word,
     Whitespace,
     Punctuation,
+    Unknown,
 }
 
 pub fn kind(c: char, bigword: &bool) -> Kind {

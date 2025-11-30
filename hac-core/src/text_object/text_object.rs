@@ -178,38 +178,62 @@ impl TextObject<Write> {
         self.col_row_from_offset(end_idx)
     }
 
-    pub fn find_char_before_separator(&self, cursor: &Cursor) -> (usize, usize) {
+    pub fn find_prev_word(&self, cursor: &Cursor) -> (usize, usize) {
+        let bigword = false; // TODO pass this in as arg
+        let count = 1; // TODO pass this in as arg
+
         let start_idx = self.to_offset_cursor(cursor);
         let mut end_idx = start_idx;
         let mut found_newline = false;
 
-        // TODO refactor to use character module
-        if let Some(initial_char) = self.content.get_char(start_idx) {
-            for _ in (0..start_idx.saturating_sub(1)).rev() {
-                let char = self.content.char(end_idx);
-
-                match (
-                    initial_char.is_alphanumeric(),
-                    char.is_alphanumeric(),
-                    found_newline,
-                ) {
-                    (_, _, true) if !self.line_break.to_string().contains(char) => break,
-                    (false, true, _) => break,
-                    (true, false, _) => break,
-                    _ if self.line_break.to_string().contains(char) => {
-                        found_newline = true;
-                        end_idx = end_idx.saturating_sub(1);
+        for _ in 0..count {
+            // skip trailing whitespace
+            while end_idx > 0 && self.is_whitespace(self.get_char(end_idx - 1)) {
+                match self.get_char(end_idx - 1) {
+                    Some('\n') => {
+                        // stop at the second newline found
+                        if found_newline {
+                            return self.col_row_from_offset(end_idx);
+                        } else {
+                            found_newline = true;
+                            end_idx = end_idx.saturating_sub(1);
+                        }
                     }
                     _ => end_idx = end_idx.saturating_sub(1),
-                }
+                };
             }
-        };
 
-        let curr_row = self.content.char_to_line(end_idx);
-        let curr_row_start = self.content.line_to_char(curr_row);
-        let curr_col = end_idx.sub(curr_row_start);
+            if end_idx == 0 {
+                return self.col_row_from_offset(end_idx);
+            }
 
-        (curr_col, curr_row)
+            let initial_char_type = self.get_char_kind(self.get_char(end_idx - 1), &bigword);
+            while end_idx > 0
+                && self.get_char_kind(self.get_char(end_idx - 1), &bigword) == initial_char_type
+            {
+                end_idx = end_idx.saturating_sub(1);
+            }
+        }
+
+        self.col_row_from_offset(end_idx)
+    }
+
+    fn is_whitespace(&self, c: Option<char>) -> bool {
+        match c {
+            Some(c) => character::kind(c, &false) == character::Kind::Whitespace,
+            None => false,
+        }
+    }
+
+    fn get_char(&self, idx: usize) -> Option<char> {
+        self.content.get_char(idx)
+    }
+
+    fn get_char_kind(&self, c: Option<char>, bigword: &bool) -> character::Kind {
+        match c {
+            Some(c) => character::kind(c, bigword),
+            None => character::Kind::Unknown,
+        }
     }
 
     pub fn find_word_end(&self, cursor: &Cursor, bigword: &bool) -> (usize, usize) {
@@ -475,23 +499,20 @@ impl<State> std::fmt::Display for TextObject<State> {
 mod tests {
     use super::*;
 
-    pub fn setup(content: &mut Option<&str>) -> (TextObject<Write>, Cursor) {
-        (
-            TextObject::from(content.get_or_insert("")).with_write(),
-            Cursor::default(),
-        )
+    pub fn setup(content: &str) -> (TextObject<Write>, Cursor) {
+        (TextObject::from(content).with_write(), Cursor::default())
     }
 
     #[test]
     pub fn insert_char() {
-        let (mut object, cur) = setup(&mut Option::None);
+        let (mut object, cur) = setup("");
         object.insert_char('a', &cur);
         assert_eq!("a", object.content.to_string())
     }
 
     #[test]
     pub fn find_word_end_returns_ending_row_col() {
-        let (object, cur) = setup(&mut Option::Some("hello"));
+        let (object, cur) = setup("hello");
 
         let (col, row) = object.find_word_end(&cur, &false);
 
@@ -501,7 +522,7 @@ mod tests {
 
     #[test]
     pub fn find_word_end_breaks() {
-        let (object, cur) = setup(&mut Option::Some("test.phrase"));
+        let (object, cur) = setup("test.phrase");
 
         let (col, row) = object.find_word_end(&cur, &false);
 
@@ -511,7 +532,7 @@ mod tests {
 
     #[test]
     pub fn find_word_end_skips_whitespace() {
-        let (object, cur) = setup(&mut Option::Some(" \t\nhello"));
+        let (object, cur) = setup(" \t\nhello");
 
         let (col, row) = object.find_word_end(&cur, &false);
 
@@ -521,7 +542,7 @@ mod tests {
 
     #[test]
     pub fn find_word_end_treats_punc_like_word() {
-        let (object, cur) = setup(&mut Option::Some("....."));
+        let (object, cur) = setup(".....");
         let (col, row) = object.find_word_end(&cur, &false);
 
         assert_eq!(0, row);
@@ -530,7 +551,7 @@ mod tests {
 
     #[test]
     pub fn find_word_end_bigword_includes_punc() {
-        let (object, cur) = setup(&mut Option::Some("test.phrase"));
+        let (object, cur) = setup("test.phrase");
 
         let (col, row) = object.find_word_end(&cur, &true);
 
@@ -540,7 +561,7 @@ mod tests {
 
     #[test]
     pub fn find_next_word_works() {
-        let (object, cur) = setup(&mut Option::Some("test phrase"));
+        let (object, cur) = setup("test phrase");
         let (col, row) = object.find_next_word(&cur, &false);
         assert_eq!(0, row);
         assert_eq!(5, col);
@@ -548,7 +569,7 @@ mod tests {
 
     #[test]
     pub fn find_next_word_includes_punc() {
-        let (object, cur) = setup(&mut Option::Some("test.phrase"));
+        let (object, cur) = setup("test.phrase");
         let (col, row) = object.find_next_word(&cur, &false);
         assert_eq!(0, row);
         assert_eq!(4, col);
@@ -556,7 +577,7 @@ mod tests {
 
     #[test]
     pub fn find_next_word_ignores_whitespace() {
-        let (object, cur) = setup(&mut Option::Some("test \tword"));
+        let (object, cur) = setup("test \tword");
         let (col, row) = object.find_next_word(&cur, &false);
         assert_eq!(0, row);
         assert_eq!(6, col);
@@ -564,7 +585,7 @@ mod tests {
 
     #[test]
     pub fn find_next_word_treats_punc_like_word() {
-        let (object, cur) = setup(&mut Option::Some("... ..."));
+        let (object, cur) = setup("... ...");
         let (col, row) = object.find_next_word(&cur, &false);
         assert_eq!(0, row);
         assert_eq!(4, col);
@@ -572,7 +593,7 @@ mod tests {
 
     #[test]
     pub fn find_next_word_stops_at_newline() {
-        let (object, cur) = setup(&mut Option::Some("hello\n\nworld"));
+        let (object, cur) = setup("hello\n\nworld");
         let (col, row) = object.find_next_word(&cur, &false);
         assert_eq!(1, row);
         assert_eq!(0, col);
@@ -580,11 +601,192 @@ mod tests {
 
     #[test]
     pub fn find_next_word_bigword_includes_punc() {
-        let (object, cur) = setup(&mut Option::Some("test.phrase newword"));
+        let (object, cur) = setup("test.phrase newword");
 
         let (col, row) = object.find_next_word(&cur, &true);
 
         assert_eq!(0, row);
         assert_eq!(12, col);
+    }
+
+    mod find_prev_word {
+        use super::*;
+
+        #[test]
+        pub fn from_middle_of_word_moves_to_word_start() {
+            let (object, mut cur) = setup("myphrase");
+            cur.move_right(3);
+            let (col, row) = object.find_prev_word(&cur);
+
+            assert_eq!('m', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(0, col);
+        }
+
+        #[test]
+        pub fn from_word_start_moves_to_previous_word_start_same_line() {
+            let (object, mut cur) = setup("first second");
+            cur.move_right(6);
+            let (col, row) = object.find_prev_word(&cur);
+
+            assert_eq!('f', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(0, col);
+        }
+
+        #[test]
+        pub fn from_whitespace_between_words_moves_to_prev_word_start() {
+            let (object, mut cur) = setup("foo bar  baz");
+            cur.move_right(7);
+            let (col, row) = object.find_prev_word(&cur);
+
+            assert_eq!('b', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(4, col);
+        }
+
+        #[test]
+        pub fn from_trailing_whitespace_at_line_end_moves_to_last_word_start() {
+            let (object, mut cur) = setup("bar\t ");
+            cur.move_right(4);
+            let (col, row) = object.find_prev_word(&cur);
+
+            assert_eq!('b', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(0, col);
+        }
+
+        #[test]
+        pub fn from_line_start_moves_to_last_word_previous_line() {
+            let (object, mut cur) = setup("foo\nbar");
+            cur.move_right(4);
+            let (col, row) = object.find_prev_word(&cur);
+
+            assert_eq!('f', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(0, col);
+        }
+
+        #[test]
+        pub fn stops_at_buffer_start_when_no_previous_word() {
+            let (object, cur) = setup("foo");
+            let (col, row) = object.find_prev_word(&cur);
+
+            assert_eq!('f', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(0, col);
+        }
+
+        #[test]
+        pub fn treats_punctuation_as_separate_word_segment() {
+            let (object, mut cur) = setup("foo.bar");
+            cur.move_right(4);
+            let (col, row) = object.find_prev_word(&cur);
+
+            assert_eq!('.', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(3, col);
+        }
+
+        #[test]
+        pub fn from_inside_punctuation_runs_to_punctuation_start() {
+            let (object, mut cur) = setup("foo !!!");
+            cur.move_right(5);
+            let (col, row) = object.find_prev_word(&cur);
+
+            assert_eq!('!', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(4, col);
+        }
+
+        #[test]
+        pub fn with_empty_line_stops_at_newline() {
+            let (object, mut cur) = setup("foo\n\nbar");
+            cur.move_right(5);
+            let (col, row) = object.find_prev_word(&cur);
+
+            assert_eq!('\n', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(1, row);
+            assert_eq!(0, col);
+        }
+
+        #[test]
+        pub fn over_tabs_and_spaces_to_previous_word() {
+            let (object, mut cur) = setup("foo\t bar");
+            cur.move_right(5);
+            let (col, row) = object.find_prev_word(&cur);
+
+            assert_eq!('f', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(0, col);
+        }
+
+        #[test]
+        pub fn from_nonletter_word_moves_to_previous_word() {
+            let (object, mut cur) = setup("123");
+            cur.move_right(1);
+            let (col, row) = object.find_prev_word(&cur);
+
+            assert_eq!('1', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(0, col);
+        }
+
+        #[test]
+        pub fn from_before_first_nonblank_moves_to_previous_line_nonblank() {
+            let (object, mut cur) = setup("foo\n\t bar");
+            cur.move_right(6);
+            let (col, row) = object.find_prev_word(&cur);
+
+            assert_eq!('f', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(0, col);
+        }
+
+        #[test]
+        pub fn empty_file() {
+            let (object, cur) = setup("");
+            let (col, row) = object.find_prev_word(&cur);
+
+            assert_eq!(0, row);
+            assert_eq!(0, col);
+        }
+
+        #[test]
+        pub fn very_long_word() {
+            let mut content = String::new();
+            for _ in 0..1000 {
+                content = content.add("a");
+            }
+
+            let (object, mut cur) = setup(&content);
+            cur.move_right(content.len() - 1);
+            let (col, row) = object.find_prev_word(&cur);
+
+            assert_eq!(0, row);
+            assert_eq!(0, col);
+        }
+
+        #[test]
+        pub fn unicode_characters() {
+            let (object, mut cur) = setup("café résumé");
+            cur.move_right(10);
+            let (col, row) = object.find_prev_word(&cur);
+
+            assert_eq!('r', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(5, col);
+        }
+
+        #[test]
+        pub fn multibyte_sequences() {
+            let (object, mut cur) = setup("hello 世界|");
+            cur.move_right(8);
+            let (col, row) = object.find_prev_word(&cur);
+
+            assert_eq!('世', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(6, col);
+        }
     }
 }

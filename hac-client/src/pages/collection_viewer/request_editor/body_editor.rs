@@ -388,7 +388,7 @@ impl<'be> BodyEditor<'be> {
     }
 
     fn move_to_prev_word(&mut self) {
-        let (col, row) = self.body.find_char_before_separator(&self.cursor);
+        let (col, row) = self.body.find_prev_word(&self.cursor);
         self.cursor.move_to_row(row);
         self.cursor.move_to_col(col);
         let current_line_len = self.body.line_len(self.cursor.row());
