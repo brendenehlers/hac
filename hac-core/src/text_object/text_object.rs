@@ -236,23 +236,6 @@ impl TextObject<Write> {
         self.col_row_from_offset(end_idx)
     }
 
-    fn skip_whitespace_forward(&self, start_idx: usize, bigword: &bool) -> usize {
-        let mut end_idx = start_idx;
-        // skip past initial whitespace to first char of a word or punctuation
-        if let Some(initial_char) = self.content.get_char(start_idx) {
-            if character::kind(initial_char, bigword) == character::Kind::Whitespace {
-                for char in self.content.chars_at(start_idx + 1) {
-                    end_idx = end_idx.add(1);
-                    if character::kind(char, bigword) != character::Kind::Whitespace {
-                        break;
-                    }
-                }
-            }
-        }
-
-        end_idx
-    }
-
     pub fn find_empty_line_above(&self, cursor: &Cursor) -> usize {
         let mut new_row = cursor.row().saturating_sub(1);
 
@@ -468,6 +451,23 @@ impl TextObject<Write> {
         } else {
             String::new()
         }
+    }
+
+    fn skip_whitespace_forward(&self, start_idx: usize, bigword: &bool) -> usize {
+        let mut end_idx = start_idx;
+        // skip past initial whitespace to first char of a word or punctuation
+        if let Some(initial_char) = self.content.get_char(start_idx) {
+            if character::kind(initial_char, bigword) == character::Kind::Whitespace {
+                for char in self.content.chars_at(start_idx + 1) {
+                    end_idx = end_idx.add(1);
+                    if character::kind(char, bigword) != character::Kind::Whitespace {
+                        break;
+                    }
+                }
+            }
+        }
+
+        end_idx
     }
 
     fn is_whitespace(&self, c: Option<char>) -> bool {
