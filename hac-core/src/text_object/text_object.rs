@@ -218,24 +218,6 @@ impl TextObject<Write> {
         self.col_row_from_offset(end_idx)
     }
 
-    fn is_whitespace(&self, c: Option<char>) -> bool {
-        match c {
-            Some(c) => character::kind(c, &false) == character::Kind::Whitespace,
-            None => false,
-        }
-    }
-
-    fn get_char(&self, idx: usize) -> Option<char> {
-        self.content.get_char(idx)
-    }
-
-    fn get_char_kind(&self, c: Option<char>, bigword: &bool) -> character::Kind {
-        match c {
-            Some(c) => character::kind(c, bigword),
-            None => character::Kind::Unknown,
-        }
-    }
-
     pub fn find_word_end(&self, cursor: &Cursor, bigword: &bool) -> (usize, usize) {
         // starting at the next character so we don't get stuck on single length string
         let start_idx = self.to_offset_cursor(cursor) + 1;
@@ -485,6 +467,24 @@ impl TextObject<Write> {
             "  ".repeat(indentation_level)
         } else {
             String::new()
+        }
+    }
+
+    fn is_whitespace(&self, c: Option<char>) -> bool {
+        match c {
+            Some(c) => character::kind(c, &false) == character::Kind::Whitespace,
+            None => false,
+        }
+    }
+
+    fn get_char(&self, idx: usize) -> Option<char> {
+        self.content.get_char(idx)
+    }
+
+    fn get_char_kind(&self, c: Option<char>, bigword: &bool) -> character::Kind {
+        match c {
+            Some(c) => character::kind(c, bigword),
+            None => character::Kind::Unknown,
         }
     }
 }
