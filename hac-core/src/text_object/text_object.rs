@@ -584,7 +584,7 @@ mod tests {
         use super::*;
 
         #[test]
-        pub fn find_next_word_from_middle_of_word_to_next() {
+        pub fn from_middle_of_word_to_next() {
             let (object, mut cur) = setup("test phrase");
             cur.move_right(2);
             let (col, row) = object.find_next_word(&cur, &false);
@@ -594,7 +594,7 @@ mod tests {
         }
 
         #[test]
-        pub fn find_next_word_from_end_of_word_to_next() {
+        pub fn from_end_of_word_to_next() {
             let (object, mut cur) = setup("test phrase");
             cur.move_right(3);
             let (col, row) = object.find_next_word(&cur, &false);
@@ -604,7 +604,7 @@ mod tests {
         }
 
         #[test]
-        pub fn find_next_word_between_space_separated_words() {
+        pub fn between_space_separated_words() {
             let (object, mut cur) = setup("test phrase");
             cur.move_right(4);
             let (col, row) = object.find_next_word(&cur, &false);
@@ -614,7 +614,7 @@ mod tests {
         }
 
         #[test]
-        pub fn find_next_word_within_keyword_characters() {
+        pub fn within_keyword_characters() {
             let (object, mut cur) = setup("foo_bar");
             cur.move_right(2);
             let (col, row) = object.find_next_word(&cur, &false);
@@ -624,7 +624,7 @@ mod tests {
         }
 
         #[test]
-        pub fn find_next_word_keyword_to_punctuation() {
+        pub fn keyword_to_punctuation() {
             let (object, mut cur) = setup("foo,bar");
             cur.move_right(2);
             let (col, row) = object.find_next_word(&cur, &false);
@@ -634,7 +634,7 @@ mod tests {
         }
 
         #[test]
-        pub fn find_next_word_punctuation_to_keyword() {
+        pub fn punctuation_to_keyword() {
             let (object, mut cur) = setup("foo,bar");
             cur.move_right(3);
             let (col, row) = object.find_next_word(&cur, &false);
@@ -644,7 +644,7 @@ mod tests {
         }
 
         #[test]
-        pub fn find_next_word_consecutive_punctuation() {
+        pub fn consecutive_punctuation() {
             let (object, mut cur) = setup("foo!!");
             cur.move_right(3);
             let (col, row) = object.find_next_word(&cur, &false);
@@ -654,7 +654,7 @@ mod tests {
         }
 
         #[test]
-        pub fn find_next_word_multiple_spaces() {
+        pub fn multiple_spaces() {
             let (object, cur) = setup("one  two");
             let (col, row) = object.find_next_word(&cur, &false);
             assert_eq!('t', object.get_char(object.to_offset(col, row)).unwrap());
@@ -663,7 +663,7 @@ mod tests {
         }
 
         #[test]
-        pub fn find_next_word_mixed_spaces_and_tabs() {
+        pub fn mixed_spaces_and_tabs() {
             let (object, mut cur) = setup("one \ttwo");
             cur.move_right(3);
             let (col, row) = object.find_next_word(&cur, &false);
@@ -673,7 +673,7 @@ mod tests {
         }
 
         #[test]
-        pub fn find_next_word_to_next_line() {
+        pub fn to_next_line() {
             let (object, mut cur) = setup("word\nnext");
             cur.move_right(3);
             let (col, row) = object.find_next_word(&cur, &false);
@@ -683,7 +683,7 @@ mod tests {
         }
 
         #[test]
-        pub fn find_next_word_across_empty_line() {
+        pub fn across_empty_line() {
             let (object, mut cur) = setup("word\n\nnext");
             cur.move_right(3);
             let (col, row) = object.find_next_word(&cur, &false);
@@ -693,7 +693,7 @@ mod tests {
         }
 
         #[test]
-        pub fn find_next_word_across_multiple_empty_lines() {
+        pub fn across_multiple_empty_lines() {
             let (object, mut cur) = setup("word\n\n\nnext");
             cur.move_right(3);
             let (col, row) = object.find_next_word(&cur, &false);
@@ -703,7 +703,7 @@ mod tests {
         }
 
         #[test]
-        pub fn find_next_word_at_file_end_no_op() {
+        pub fn at_file_end_no_op() {
             let (object, mut cur) = setup("foo");
             cur.move_right(3);
             let (col, row) = object.find_next_word(&cur, &false);
@@ -713,7 +713,7 @@ mod tests {
         }
 
         #[test]
-        pub fn find_next_word_empty_file() {
+        pub fn empty_file() {
             let (object, cur) = setup("");
             let (col, row) = object.find_next_word(&cur, &false);
             assert_eq!(0, row);
@@ -721,7 +721,7 @@ mod tests {
         }
 
         #[test]
-        pub fn find_next_word_whitespace_only_line() {
+        pub fn whitespace_only_line() {
             let (object, mut cur) = setup("word  \nnext");
             cur.move_right(3);
             let (col, row) = object.find_next_word(&cur, &false);
@@ -731,7 +731,7 @@ mod tests {
         }
 
         #[test]
-        pub fn find_next_word_very_long_word() {
+        pub fn very_long_word() {
             let content = create_long_word();
             let (object, cur) = setup(&content);
             let (col, row) = object.find_next_word(&cur, &false);
@@ -740,7 +740,7 @@ mod tests {
         }
 
         #[test]
-        pub fn find_next_word_punctuation_only_word() {
+        pub fn punctuation_only_word() {
             let (object, cur) = setup("word !!!");
             let (col, row) = object.find_next_word(&cur, &false);
             assert_eq!('!', object.get_char(object.to_offset(col, row)).unwrap());
@@ -749,7 +749,7 @@ mod tests {
         }
 
         #[test]
-        pub fn find_next_word_special_char_to_keyword() {
+        pub fn special_char_to_keyword() {
             let (object, cur) = setup("$foo");
             let (col, row) = object.find_next_word(&cur, &false);
             assert_eq!('f', object.get_char(object.to_offset(col, row)).unwrap());
@@ -758,7 +758,7 @@ mod tests {
         }
 
         #[test]
-        pub fn find_next_word_unicode_characters() {
+        pub fn unicode_characters() {
             let (object, cur) = setup("café résumé");
             let (col, row) = object.find_next_word(&cur, &false);
             assert_eq!('r', object.get_char(object.to_offset(col, row)).unwrap());
@@ -767,7 +767,7 @@ mod tests {
         }
 
         #[test]
-        pub fn find_next_word_multibyte_sequences() {
+        pub fn multibyte_sequences() {
             let (object, cur) = setup("世界 hello");
             let (col, row) = object.find_next_word(&cur, &false);
             assert_eq!('h', object.get_char(object.to_offset(col, row)).unwrap());
@@ -776,7 +776,7 @@ mod tests {
         }
 
         #[test]
-        pub fn find_next_word_keyword_punctuation_keyword() {
+        pub fn keyword_punctuation_keyword() {
             let (object, mut cur) = setup("foo()bar");
             cur.move_right(3);
             let (col, row) = object.find_next_word(&cur, &false);
@@ -786,7 +786,7 @@ mod tests {
         }
 
         #[test]
-        pub fn find_next_word_keyword_punctuation_at_line_end() {
+        pub fn keyword_punctuation_at_line_end() {
             let (object, mut cur) = setup("word,\nnext");
             cur.move_right(4);
             let (col, row) = object.find_next_word(&cur, &false);
@@ -796,7 +796,7 @@ mod tests {
         }
 
         #[test]
-        pub fn find_next_word_from_whitespace_between_words() {
+        pub fn from_whitespace_between_words() {
             let (object, mut cur) = setup("word   next");
             cur.move_right(5);
             let (col, row) = object.find_next_word(&cur, &false);
@@ -806,14 +806,14 @@ mod tests {
         }
 
         #[test]
-        pub fn find_next_word_bigword_includes_punc() {
-            let (object, cur) = setup("test.phrase newword");
+        pub fn bigword_all_punctuation_and_special_chars() {
+            let (object, cur) = setup("t.,<>?/{}[]\\|=+-_!@#$%^&*();:'\"`~ newword");
 
             let (col, row) = object.find_next_word(&cur, &true);
 
             assert_eq!('n', object.get_char(object.to_offset(col, row)).unwrap());
             assert_eq!(0, row);
-            assert_eq!(12, col);
+            assert_eq!(34, col);
         }
     }
 
