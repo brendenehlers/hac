@@ -512,7 +512,7 @@ impl<State> std::fmt::Display for TextObject<State> {
 mod tests {
     use super::*;
 
-    pub fn setup(content: &str) -> (TextObject<Write>, Cursor) {
+    fn setup(content: &str) -> (TextObject<Write>, Cursor) {
         (TextObject::from(content).with_write(), Cursor::default())
     }
 
@@ -531,53 +531,146 @@ mod tests {
         assert_eq!("a", object.content.to_string())
     }
 
-    #[test]
-    pub fn find_word_end_returns_ending_row_col() {
-        let (object, cur) = setup("hello");
+    mod find_word_end {
+        use super::*;
 
-        let (col, row) = object.find_word_end(&cur, &false);
+        #[test]
+        pub fn simple_word() {
+            let (object, cur) = setup("hello");
+            let (col, row) = object.find_word_end(&cur, &false);
+            assert_eq!('o', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(4, col);
+        }
 
-        assert_eq!(0, row);
-        assert_eq!(4, col);
-    }
+        #[test]
+        pub fn from_middle() {
+            let (object, mut cur) = setup("hello");
+            cur.move_right(2);
+            let (col, row) = object.find_word_end(&cur, &false);
+            assert_eq!('o', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(4, col);
+        }
 
-    #[test]
-    pub fn find_word_end_breaks() {
-        let (object, cur) = setup("test.phrase");
+        #[test]
+        pub fn multiple_words() {
+            let (object, cur) = setup("foo bar baz");
+            let (col, row) = object.find_word_end(&cur, &false);
+            assert_eq!('o', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(2, col);
+        }
 
-        let (col, row) = object.find_word_end(&cur, &false);
+        #[test]
+        pub fn skip_leading_whitespace() {
+            let (object, cur) = setup(" \tword");
+            let (col, row) = object.find_word_end(&cur, &false);
+            assert_eq!('d', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(5, col);
+        }
 
-        assert_eq!(0, row);
-        assert_eq!(3, col);
-    }
+        #[test]
+        pub fn skip_multiple_spaces() {
+            let (object, mut cur) = setup("foo    bar");
+            cur.move_right(2);
+            let (col, row) = object.find_word_end(&cur, &false);
+            assert_eq!('r', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(9, col);
+        }
 
-    #[test]
-    pub fn find_word_end_skips_whitespace() {
-        let (object, cur) = setup(" \t\nhello");
+        #[test]
+        pub fn stops_at_punctuation() {
+            let (object, cur) = setup("hello,world");
+            let (col, row) = object.find_word_end(&cur, &false);
+            assert_eq!('o', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(4, col);
+        }
 
-        let (col, row) = object.find_word_end(&cur, &false);
+        #[test]
+        pub fn punctuation_as_word() {
+            let (object, cur) = setup("!!!");
+            let (col, row) = object.find_word_end(&cur, &false);
+            assert_eq!('!', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(2, col);
+        }
 
-        assert_eq!(1, row);
-        assert_eq!(4, col);
-    }
+        #[test]
+        pub fn mixed_alphanumeric() {
+            let (object, cur) = setup("test123");
+            let (col, row) = object.find_word_end(&cur, &false);
+            assert_eq!('3', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(6, col);
+        }
 
-    #[test]
-    pub fn find_word_end_treats_punc_like_word() {
-        let (object, cur) = setup(".....");
-        let (col, row) = object.find_word_end(&cur, &false);
+        #[test]
+        pub fn single_character() {
+            let (object, cur) = setup("a b");
+            let (col, row) = object.find_word_end(&cur, &false);
+            assert_eq!('b', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(2, col);
+        }
 
-        assert_eq!(0, row);
-        assert_eq!(4, col);
-    }
+        #[test]
+        pub fn end_of_line() {
+            let (object, mut cur) = setup("word");
+            cur.move_right(3);
+            let (col, row) = object.find_word_end(&cur, &false);
+            assert_eq!(Option::None, object.get_char(object.to_offset(col, row)));
+            assert_eq!(0, row);
+            assert_eq!(4, col);
+        }
 
-    #[test]
-    pub fn find_word_end_bigword_includes_punc() {
-        let (object, cur) = setup("test.phrase");
+        #[test]
+        pub fn empty_line() {
+            let (object, cur) = setup("\n\nword");
+            let (col, row) = object.find_word_end(&cur, &false);
+            assert_eq!('d', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(2, row);
+            assert_eq!(3, col);
+        }
 
-        let (col, row) = object.find_word_end(&cur, &true);
+        #[test]
+        pub fn underscore_word() {
+            let (object, cur) = setup("test_case");
+            let (col, row) = object.find_word_end(&cur, &false);
+            assert_eq!('e', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(8, col);
+        }
 
-        assert_eq!(0, row);
-        assert_eq!(10, col);
+        #[test]
+        pub fn unicode_characters() {
+            let (object, cur) = setup("résumé");
+            let (col, row) = object.find_word_end(&cur, &false);
+            assert_eq!('é', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(5, col);
+        }
+
+        #[test]
+        pub fn multibyte_sequences() {
+            let (object, cur) = setup("世界");
+            let (col, row) = object.find_word_end(&cur, &false);
+            assert_eq!('界', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(1, col);
+        }
+
+        #[test]
+        pub fn bigword_all_punctuation_and_special_chars() {
+            let (object, cur) = setup("t.,<>?/{}[]\\|=+-_!@#$%^&*();:'\"`~");
+            let (col, row) = object.find_word_end(&cur, &true);
+            assert_eq!('~', object.get_char(object.to_offset(col, row)).unwrap());
+            assert_eq!(0, row);
+            assert_eq!(32, col);
+        }
     }
 
     mod find_next_word {
