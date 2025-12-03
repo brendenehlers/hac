@@ -3,3 +3,4 @@ hac.log
 tarpaulin-report.html
 mutants.out*
 .vscode
+*.code-workspace
