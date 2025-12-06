@@ -495,10 +495,8 @@ impl TextObject<Write> {
     }
 
     fn get_char_kind(&self, c: Option<char>, bigword: &bool) -> character::Kind {
-        match c {
-            Some(c) => character::kind(c, bigword),
-            None => character::Kind::Unknown,
-        }
+        c.map(|c| character::kind(c, bigword))
+            .unwrap_or_else(|| character::Kind::Unknown)
     }
 }
 
