@@ -178,7 +178,6 @@ impl<'be> BodyEditor<'be> {
             Action::DeleteUntilEOL => self.erase_until_eol(),
             Action::InsertAtEOL => self.insert_at_eol(),
             Action::MoveAfterWhitespaceReverse => self.move_after_whitespace_reverse(),
-            Action::MoveAfterWhitespace => self.move_after_whitespace(),
             Action::DeletePreviousNonWrapping => self.erase_backwards_up_to_line_start(),
             Action::MoveToTop => self.move_to_top(),
             Action::DeleteLine => self.delete_current_line(),
@@ -188,7 +187,10 @@ impl<'be> BodyEditor<'be> {
             Action::DeleteBack => self.delete_word_backwards(),
             Action::PageDown => self.page_down(),
             Action::PageUp => self.page_up(),
-            Action::NextWord => self.move_to_next_word(),
+            Action::NextWord => self.move_to_next_word(&false),
+            Action::NextWordBig => self.move_to_next_word(&true),
+            Action::End => self.move_to_word_end(&false),
+            Action::EndBig => self.move_to_word_end(&true),
             Action::PreviousWord => self.move_to_prev_word(),
             Action::InsertLineBelow => self.insert_line_below(),
             Action::InsertLineAbove => self.insert_line_above(),
@@ -376,8 +378,8 @@ impl<'be> BodyEditor<'be> {
         self.editor_mode = EditorMode::Insert;
     }
 
-    fn move_to_next_word(&mut self) {
-        let (col, row) = self.body.find_char_after_separator(&self.cursor);
+    fn move_to_next_word(&mut self, bigword: &bool) {
+        let (col, row) = self.body.find_next_word(&self.cursor, bigword);
         self.cursor.move_to_row(row);
         self.cursor.move_to_col(col);
         let current_line_len = self.body.line_len(self.cursor.row());
@@ -386,7 +388,7 @@ impl<'be> BodyEditor<'be> {
     }
 
     fn move_to_prev_word(&mut self) {
-        let (col, row) = self.body.find_char_before_separator(&self.cursor);
+        let (col, row) = self.body.find_prev_word(&self.cursor);
         self.cursor.move_to_row(row);
         self.cursor.move_to_col(col);
         let current_line_len = self.body.line_len(self.cursor.row());
@@ -394,13 +396,13 @@ impl<'be> BodyEditor<'be> {
         self.maybe_scroll_view();
     }
 
-    fn move_after_whitespace(&mut self) {
-        let (col, row) = self.body.find_char_after_whitespace(&self.cursor);
+    fn move_to_word_end(&mut self, bigword: &bool) {
+        let (col, row) = self.body.find_word_end(&self.cursor, bigword);
         self.cursor.move_to_row(row);
         self.cursor.move_to_col(col);
-        self.maybe_scroll_view();
         let current_line_len = self.body.line_len(self.cursor.row());
         self.cursor.maybe_snap_to_col(current_line_len);
+        self.maybe_scroll_view();
     }
 
     fn move_after_whitespace_reverse(&mut self) {

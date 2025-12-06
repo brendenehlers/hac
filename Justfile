@@ -1,19 +1,22 @@
 all: build test
 
+run:
+	cargo run
+
 build:
     cargo build
 
 build-release:
-    cargo build --release --verbose
+    cargo build --release
 
 test:
-    cargo test --workspace --all-features --verbose
+    cargo test --workspace --all-features
 
 test-release:
-    cargo test --workspace --all-features --release --verbose
+    cargo test --workspace --all-features --release
 
 coverage:
-    cargo tarpaulin --verbose --workspace -o Html
+    cargo tarpaulin --workspace -o Html
 
 build-time:
     cargo +nightly clean
@@ -30,6 +33,11 @@ lint:
 
 lint-fix:
 	cargo clippy --fix
+
+check:
+    just fmt
+    just lint
+    just test
 
 # =================================== #
 #      RELEASE STUFF. DO NOT USE      #

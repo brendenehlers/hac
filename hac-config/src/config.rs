@@ -13,6 +13,9 @@ pub enum Action {
     FindPrevious,
 
     NextWord,
+    NextWordBig,
+    End,
+    EndBig,
     PreviousWord,
     MoveLeft,
     MoveDown,
@@ -36,7 +39,6 @@ pub enum Action {
     EnterMode(EditorMode),
     InsertAtEOL,
     MoveAfterWhitespaceReverse,
-    MoveAfterWhitespace,
     DeletePreviousNonWrapping,
     DeleteCurrAndBelow,
     DeleteCurrAndAbove,
